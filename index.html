@@ -1,28 +1,37 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Auto Feedback Bot</title>
-    <link rel="stylesheet" href="style.css">
+  <title>Auto Feedback Dashboard</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="container">
-    <h2>🚀 Auto Feedback Bot</h2>
+<h2>🔐 Login</h2>
+<div class="card">
+  <input id="account" placeholder="Account">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+</div>
 
-    <label>Username</label>
-    <input type="text" id="username" placeholder="Masukkan username">
+<h2>📋 Dashboard</h2>
+<div class="card">
+  <button onclick="loadTasks()">Load Tasks</button>
+  <button onclick="runAuto()">Run Auto</button>
 
-    <label>Password</label>
-    <input type="password" id="password" placeholder="Masukkan password">
+  <p id="summary"></p>
 
-    <button onclick="runBot()">Jalankan Bot</button>
-
-    <h3>Status:</h3>
-    <div id="status">Idle...</div>
-
-    <h3>Log:</h3>
-    <pre id="log"></pre>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nama</th>
+        <th>DPD</th>
+        <th>Debt</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="taskTable"></tbody>
+  </table>
 </div>
 
 <script src="script.js"></script>
