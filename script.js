@@ -1,15 +1,13 @@
-const BASE_URL = "http://localhost:3000/api";
+const API = "http://localhost:3000/api";
 
-let TOKEN = localStorage.getItem("token");
+let cookies = [];
 
-// =====================
-// 🔐 LOGIN
-// =====================
+// LOGIN
 async function login() {
   const account = document.getElementById("account").value;
   const password = document.getElementById("password").value;
 
-  const res = await fetch(BASE_URL + "/login", {
+  const res = await fetch(API + "/login", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -17,101 +15,75 @@ async function login() {
     body: JSON.stringify({ account, password })
   });
 
-  const result = await res.json();
+  const data = await res.json();
 
-  if (result.success) {
-    TOKEN = result.token;
-    localStorage.setItem("token", TOKEN);
-
-    alert("Login sukses ✅");
-  } else {
-    alert("Login gagal ❌");
+  if (!data.success) {
+    alert("Login gagal");
+    return;
   }
+
+  cookies = data.cookies;
+
+  alert("Login berhasil 🔥");
+
+  loadTasks();
 }
 
-// =====================
-// 📋 LOAD TASKS
-// =====================
+// LOAD TASK
 async function loadTasks() {
-  if (!TOKEN) {
-    alert("Login dulu!");
-    return;
-  }
-
-  const res = await fetch(BASE_URL + "/tasks", {
+  const res = await fetch(API + "/tasks", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ token: TOKEN })
+    body: JSON.stringify({ cookies })
   });
 
-  const result = await res.json();
+  const data = await res.json();
 
-  if (!result.success) {
-    alert("Session expired, login ulang");
-    return;
-  }
-
-  renderTasks(result.data);
+  renderTasks(data.data);
 }
 
-// =====================
-// 🔥 AUTO
-// =====================
+// AUTO
 async function runAuto() {
-  if (!TOKEN) {
-    alert("Login dulu!");
-    return;
-  }
-
-  await fetch(BASE_URL + "/auto", {
+  await fetch(API + "/auto", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ token: TOKEN })
+    body: JSON.stringify({ cookies })
   });
 
-  alert("Auto jalan di background 🚀");
+  alert("Auto berjalan di background 🚀");
 }
 
-// =====================
-// 🎨 RENDER TABLE
-// =====================
+// RENDER
 function renderTasks(tasks) {
-  const table = document.getElementById("taskTable");
-  const summary = document.getElementById("summary");
-
-  table.innerHTML = "";
+  const container = document.getElementById("tasks");
+  container.innerHTML = "";
 
   let done = 0;
   let pending = 0;
 
   tasks.forEach(t => {
-    const isDone = t.promiseStatus === 1; // asumsi ini tanda sudah feedback
+    const isDone = t.status !== 2;
 
     if (isDone) done++;
     else pending++;
 
-    const row = `
-      <tr>
-        <td>${t.id}</td>
-        <td>${t.userName}</td>
-        <td>${t.dpd}</td>
-        <td>${t.formatDebt}</td>
-        <td class="${isDone ? "success" : "pending"}">
-          ${isDone ? "DONE" : "PENDING"}
-        </td>
-      </tr>
+    const div = document.createElement("div");
+
+    div.innerHTML = `
+      <b>${t.userName}</b><br/>
+      Debt: ${t.formatDebt}<br/>
+      DPD: ${t.dpd}<br/>
+      Status: ${isDone ? "✅ Done" : "❌ Pending"}
+      <hr/>
     `;
 
-    table.innerHTML += row;
+    container.appendChild(div);
   });
 
-  summary.innerHTML = `
-    Total: ${tasks.length} |
-    ✅ Done: ${done} |
-    ⏳ Pending: ${pending}
-  `;
+  document.getElementById("summary").innerHTML =
+    `Total: ${tasks.length} | Done: ${done} | Pending: ${pending}`;
 }
