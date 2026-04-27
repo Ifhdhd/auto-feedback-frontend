@@ -1,39 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Auto Feedback Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Auto Feedback</title>
 </head>
 <body>
 
-<h2>🔐 Login</h2>
-<div class="card">
-  <input id="account" placeholder="Account">
-  <input id="password" type="password" placeholder="Password">
-  <button onclick="login()">Login</button>
-</div>
+<h2>Login</h2>
 
-<h2>📋 Dashboard</h2>
-<div class="card">
-  <button onclick="loadTasks()">Load Tasks</button>
-  <button onclick="runAuto()">Run Auto</button>
+<input id="account" placeholder="No HP"><br><br>
+<input id="password" type="password" placeholder="Password"><br><br>
 
-  <p id="summary"></p>
+<button onclick="login()">Login</button>
+<button onclick="runAuto()">Auto Feedback</button>
 
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Nama</th>
-        <th>DPD</th>
-        <th>Debt</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody id="taskTable"></tbody>
-  </table>
-</div>
+<h3 id="summary"></h3>
+
+<div id="tasks"></div>
 
 <script src="script.js"></script>
+
 </body>
 </html>
