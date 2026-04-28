@@ -1,19 +1,18 @@
 body {
   font-family: Arial;
-  background: #0f172a;
+  background: #020617;
   color: white;
 }
 
 .container {
-  width: 90%;
+  width: 95%;
   margin: auto;
-  margin-top: 30px;
 }
 
 .card {
-  background: #1e293b;
+  background: #0f172a;
   padding: 20px;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 input {
@@ -25,8 +24,7 @@ input {
 }
 
 button {
-  padding: 10px 15px;
-  margin-top: 10px;
+  padding: 10px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -34,10 +32,16 @@ button {
   color: black;
 }
 
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
 .summary {
   display: flex;
   gap: 10px;
-  margin-bottom: 15px;
+  margin: 15px 0;
 }
 
 .box {
@@ -52,22 +56,20 @@ button {
 
 table {
   width: 100%;
+  margin-top: 15px;
   border-collapse: collapse;
 }
 
 td, th {
   padding: 10px;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid #1e293b;
 }
 
-.status-done {
-  color: #22c55e;
-}
+.status-done { color: #22c55e; }
+.status-pending { color: #eab308; }
+.status-expired { color: #ef4444; }
 
-.status-pending {
-  color: #eab308;
-}
-
-.status-expired {
-  color: #ef4444;
+/* 🔔 hampir expired */
+.warning {
+  background: rgba(255, 0, 0, 0.2);
 }
