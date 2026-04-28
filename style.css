@@ -1,25 +1,21 @@
 body {
   font-family: Arial;
   background: #0f172a;
-  color: #fff;
+  color: white;
   margin: 0;
 }
 
 .container {
-  max-width: 900px;
+  max-width: 1000px;
   margin: auto;
   padding: 20px;
-}
-
-h1 {
-  text-align: center;
 }
 
 .card {
   background: #1e293b;
   padding: 15px;
-  margin-bottom: 20px;
   border-radius: 10px;
+  margin-bottom: 20px;
 }
 
 input {
@@ -33,23 +29,41 @@ input {
 button {
   padding: 10px;
   margin: 5px;
+  background: #3b82f6;
   border: none;
   border-radius: 6px;
-  cursor: pointer;
-  background: #3b82f6;
   color: white;
+  cursor: pointer;
 }
 
 button:hover {
   background: #2563eb;
 }
 
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.stat {
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 18px;
+}
+
+.total { background: #2563eb; }
+.sudah { background: #16a34a; }
+.belum { background: #f59e0b; }
+.expired { background: #ef4444; }
+
 table {
   width: 100%;
   border-collapse: collapse;
 }
 
-th, td {
+td, th {
   padding: 10px;
   border-bottom: 1px solid #334155;
 }
@@ -59,14 +73,19 @@ th, td {
   border-radius: 5px;
 }
 
-.sudah {
-  background: #16a34a;
+.sudah-badge { background: #16a34a; }
+.belum-badge { background: #f59e0b; }
+.expired-badge { background: #ef4444; }
+
+.progress-bar {
+  width: 100%;
+  background: #334155;
+  border-radius: 10px;
 }
 
-.belum {
-  background: #f59e0b;
-}
-
-.expired {
-  background: #ef4444;
+#progress {
+  height: 10px;
+  width: 0%;
+  background: #22c55e;
+  border-radius: 10px;
 }
