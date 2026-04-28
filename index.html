@@ -2,14 +2,17 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Auto Feedback App</title>
+  <title>Auto Feedback Pro</title>
   <link rel="stylesheet" href="style.css">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
 <div class="container">
 
-  <h1>🔥 Auto Feedback Dashboard</h1>
+  <h1>🚀 Auto Feedback PRO</h1>
 
   <!-- LOGIN -->
   <div class="card" id="loginBox">
@@ -21,13 +24,20 @@
 
   <!-- DASHBOARD -->
   <div id="dashboard" style="display:none;">
-    
+
+    <div class="top-bar">
+      <input type="text" id="search" placeholder="🔍 Cari nama / id..." onkeyup="filterTable()">
+      <button onclick="logout()">Logout</button>
+    </div>
+
     <div class="summary">
       <div class="box total">Total: <span id="total">0</span></div>
       <div class="box done">Done: <span id="done">0</span></div>
       <div class="box pending">Pending: <span id="pending">0</span></div>
       <div class="box expired">Expired: <span id="expired">0</span></div>
     </div>
+
+    <canvas id="chart" height="100"></canvas>
 
     <div class="actions">
       <button onclick="loadTasks()">🔄 Refresh</button>
@@ -40,7 +50,7 @@
           <th>ID</th>
           <th>Nama</th>
           <th>Status</th>
-          <th>Sisa Hari</th>
+          <th>Sisa</th>
         </tr>
       </thead>
       <tbody id="taskTable"></tbody>
