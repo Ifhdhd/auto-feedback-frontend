@@ -10,77 +10,66 @@
       padding: 20px;
     }
 
-    input, button {
-      padding: 10px;
-      margin: 5px;
-      border-radius: 8px;
-      border: none;
+    .card {
+      background:#1e293b;
+      padding:20px;
+      border-radius:12px;
+      margin-bottom:20px;
     }
 
-    input {
-      width: 250px;
+    input, button {
+      padding:10px;
+      margin:5px;
+      border-radius:8px;
+      border:none;
     }
 
     button {
-      background: linear-gradient(45deg,#22c55e,#16a34a);
-      color: white;
-      cursor: pointer;
+      background:#22c55e;
+      color:white;
+      cursor:pointer;
     }
 
     table {
-      width: 100%;
-      margin-top: 20px;
-      background: #1e293b;
+      width:100%;
+      background:#1e293b;
       border-collapse: collapse;
-      border-radius: 10px;
-      overflow: hidden;
     }
 
     td, th {
-      padding: 12px;
-      border-bottom: 1px solid #334155;
-      text-align: left;
-    }
-
-    th {
-      background: #020617;
+      padding:10px;
+      border-bottom:1px solid #334155;
     }
 
     .loading {
-      position: fixed;
+      position:fixed;
       top:0;left:0;
       width:100%;height:100%;
       background:rgba(0,0,0,0.7);
       display:flex;
       align-items:center;
       justify-content:center;
-      flex-direction: column;
-      font-size: 20px;
+      font-size:20px;
     }
 
     .hidden { display:none; }
-
-    .success { color:#22c55e }
-    .fail { color:#ef4444 }
   </style>
 </head>
 
 <body>
 
-<h2>🔥 Auto Feedback System</h2>
-
-<input id="account" placeholder="No HP">
-<input id="password" placeholder="Password" type="password">
-
-<br>
-
-<button onclick="login()">Login</button>
-<button onclick="autoFeedback()">Auto Feedback All</button>
+<div class="card">
+  <h2>🔥 Login</h2>
+  <input id="account" placeholder="No HP">
+  <input id="password" placeholder="Password" type="password">
+  <button onclick="login()">Login</button>
+  <button onclick="autoFeedback()">Auto Feedback All</button>
+</div>
 
 <table id="table"></table>
 
 <div id="loading" class="loading hidden">
-  <h2 id="loadingText">Loading...</h2>
+  <div id="loadingText">Loading...</div>
 </div>
 
 <script>
@@ -94,7 +83,7 @@ function hideLoading(){
 }
 
 // =====================
-// LOGIN + LOAD TASK
+// LOGIN
 // =====================
 async function login(){
   const account = document.getElementById("account").value;
@@ -102,32 +91,32 @@ async function login(){
 
   showLoading("🔐 Login...");
 
-  const loginRes = await fetch("/api/login",{
+  const res = await fetch("/api/login",{
     method:"POST",
     headers:{ "Content-Type":"application/json"},
-    body:JSON.stringify({ account, password })
+    body: JSON.stringify({ account, password })
   });
 
-  const loginData = await loginRes.json();
+  const data = await res.json();
 
-  if(!loginData.success){
+  if(!data.success){
     hideLoading();
     alert("Login gagal");
     return;
   }
 
-  showLoading("📦 Memuat semua data...");
+  showLoading("📥 Memuat data...");
 
-  const res = await fetch("/api/tasks");
-  const data = await res.json();
+  const taskRes = await fetch("/api/tasks");
+  const taskData = await taskRes.json();
 
   hideLoading();
 
-  render(data.data);
+  render(taskData.data);
 }
 
 // =====================
-// AUTO FEEDBACK (FIX)
+// AUTO FEEDBACK
 // =====================
 async function autoFeedback(){
   showLoading("🚀 Auto feedback berjalan...");
@@ -140,7 +129,7 @@ async function autoFeedback(){
 
   hideLoading();
 
-  alert(`Selesai\n✅ Success: ${data.successCount}\n❌ Fail: ${data.failedCount}`);
+  alert(`Selesai\nSuccess: ${data.successCount}\nFail: ${data.failedCount}`);
 }
 
 // =====================
@@ -153,7 +142,6 @@ function render(list){
     <tr>
       <th>Nama</th>
       <th>Debt</th>
-      <th>Status</th>
     </tr>
   `;
 
@@ -162,9 +150,6 @@ function render(list){
       <tr>
         <td>${x.userName}</td>
         <td>${x.formatDebt}</td>
-        <td class="${x.feedbackStatus === 'SUCCESS' ? 'success' : 'fail'}">
-          ${x.feedbackStatus}
-        </td>
       </tr>
     `;
   });
