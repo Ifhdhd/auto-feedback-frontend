@@ -6,19 +6,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-:root{
-  --bg:#020617;
-  --card:#0f172a;
-  --border:rgba(255,255,255,0.06);
-  --primary:#3b82f6;
-  --accent:#22c55e;
-  --danger:#ef4444;
-}
-
 body {
   margin: 0;
-  font-family: 'Inter', sans-serif;
-  background: radial-gradient(circle at top,#0f172a,#020617 70%);
+  font-family: 'Segoe UI', sans-serif;
+  background: #0f172a;
   color: #e2e8f0;
 }
 
@@ -26,44 +17,33 @@ body {
 .header {
   position: sticky;
   top: 0;
-  backdrop-filter: blur(16px);
-  background: rgba(2,6,23,0.7);
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
+  background: rgba(15,23,42,0.9);
+  backdrop-filter: blur(10px);
+  padding: 15px;
+  border-bottom: 1px solid #1e293b;
   display: flex;
   justify-content: space-between;
-  align-items: center;
 }
 
 /* CARD */
 .card {
-  background: linear-gradient(160deg,#020617,#0f172a);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 18px;
-  transition: 0.3s;
-  position: relative;
-}
-.card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 15px;
+  margin: 10px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.3);
 }
 
 /* BUTTON */
 button {
-  background: linear-gradient(135deg,#2563eb,#1d4ed8);
+  background: #3b82f6;
   border: none;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: 8px;
   color: white;
   cursor: pointer;
-  font-weight: 600;
-  transition: 0.25s;
 }
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(37,99,235,0.5);
-}
+button:hover { background: #2563eb; }
 
 /* LOGIN */
 .login {
@@ -73,90 +53,51 @@ button:hover {
   align-items:center;
 }
 .login-box {
-  background: rgba(15,23,42,0.8);
-  backdrop-filter: blur(20px);
+  background:#1e293b;
   padding:30px;
-  border-radius:18px;
-  width:320px;
-  border:1px solid var(--border);
+  border-radius:12px;
+  width:300px;
 }
-
 input {
   width:100%;
-  padding:12px;
+  padding:10px;
   margin:8px 0;
-  border-radius:10px;
+  border-radius:6px;
   border:none;
-  background:#020617;
-  color:white;
-  outline:none;
-  border:1px solid var(--border);
 }
 
-/* MODAL */
+/* LOADING MODAL */
 .modal {
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,0.6);
-  backdrop-filter: blur(6px);
+  background:rgba(0,0,0,0.7);
   display:flex;
   justify-content:center;
   align-items:center;
-}
-
-/* PROGRESS */
-.progress-box {
-  width: 320px;
-  text-align: center;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 10px;
-  background: #020617;
-  border-radius: 999px;
-  overflow: hidden;
-  margin-top: 10px;
-  border:1px solid var(--border);
-}
-
-.progress-fill {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg,#22c55e,#4ade80,#22c55e);
-  background-size:200%;
-  animation: move 2s linear infinite;
-}
-@keyframes move {
-  0%{background-position:0%}
-  100%{background-position:200%}
+  font-size:18px;
 }
 
 /* GRID */
 .grid {
   display:grid;
-  gap:18px;
-  padding:18px;
-  grid-template-columns: repeat(auto-fill, minmax(280px,1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px,1fr));
 }
 
-/* BADGE */
+/* STATUS */
 .badge {
-  padding:5px 12px;
-  border-radius:999px;
+  padding:4px 8px;
+  border-radius:6px;
   font-size:12px;
-  font-weight:600;
 }
 .green { background:#16a34a; }
 .red { background:#dc2626; }
 
 /* SKELETON */
 .skeleton {
-  height:140px;
-  border-radius:18px;
-  background: linear-gradient(90deg,#020617,#1e293b,#020617);
-  background-size:200px 100%;
+  height:120px;
+  background: linear-gradient(90deg,#1e293b,#334155,#1e293b);
   animation: shimmer 1.2s infinite;
+  border-radius:12px;
 }
 @keyframes shimmer {
   0%{background-position:-200px 0}
@@ -175,12 +116,11 @@ const API = "https://auto-feedback-backend.onrender.com";
 let cookies = [];
 let tasks = [];
 
-/* LOGIN UI */
 function renderLogin() {
   app.innerHTML = `
   <div class="login">
     <div class="login-box">
-      <h2>🔥 Auto Feedback</h2>
+      <h2>Login</h2>
       <input id="acc" placeholder="No HP">
       <input id="pass" type="password" placeholder="Password">
       <button onclick="login()">Login</button>
@@ -188,40 +128,19 @@ function renderLogin() {
   </div>`;
 }
 
-/* LOADING */
-function showLoading(text="Loading...", progress=false) {
+function showLoading(text="Loading...") {
   const div = document.createElement("div");
   div.className = "modal";
   div.id = "loading";
-
-  div.innerHTML = progress ? `
-    <div class="progress-box">
-      <div id="progressText">${text}</div>
-      <div class="progress-bar">
-        <div id="progressFill" class="progress-fill"></div>
-      </div>
-    </div>
-  ` : `
-    <div>${text}</div>
-  `;
-
+  div.innerHTML = text;
   document.body.appendChild(div);
 }
 function hideLoading() {
   document.getElementById("loading")?.remove();
 }
 
-function updateProgress(current,total){
-  const percent = Math.floor((current/total)*100);
-  document.getElementById("progressFill").style.width = percent+"%";
-  document.getElementById("progressText").innerText =
-    `🚀 ${current} / ${total} (${percent}%)`;
-}
-
-/* LOGIN */
 async function login() {
   showLoading("Login...");
-
   const res = await fetch(API + "/api/login", {
     method:"POST",
     headers:{ "Content-Type":"application/json" },
@@ -236,26 +155,25 @@ async function login() {
 
   hideLoading();
   renderDashboard();
-  loadTasks();
+
+  loadTasks(); // AUTO LOAD 🔥
 }
 
-/* DASHBOARD */
 function renderDashboard() {
   app.innerHTML = `
     <div class="header">
-      <div>
-        🚀 Auto Feedback | Total: <span id="total">0</span>
-      </div>
-      <button onclick="autoAll()">⚡ Auto All</button>
+      <div>Total: <span id="total">0</span></div>
+      <button onclick="autoAll()">Auto Feedback ALL</button>
     </div>
+
     <div id="list" class="grid"></div>
   `;
 
+  // skeleton dulu
   const list = document.getElementById("list");
   list.innerHTML = Array(6).fill().map(()=>`<div class="skeleton"></div>`).join("");
 }
 
-/* LOAD TASK */
 async function loadTasks() {
   showLoading("Ambil data...");
 
@@ -272,37 +190,31 @@ async function loadTasks() {
   document.getElementById("total").innerText = json.total;
 
   renderList();
+
   hideLoading();
 }
 
-/* RENDER */
 function renderList() {
   const list = document.getElementById("list");
 
   list.innerHTML = tasks.map(t => `
     <div class="card">
-      <div style="font-weight:700">${t.userName}</div>
-      <div style="opacity:.6;font-size:12px">${t.phoneNumber}</div>
+      <b>${t.userName}</b><br>
+      ${t.phoneNumber}<br><br>
 
-      <div style="margin:10px 0;height:1px;background:#1f2937"></div>
+      💰 ${t.formatDebt}<br>
+      📍 ${t.addressBo?.city}<br><br>
 
-      💰 <b>${t.formatDebt}</b><br>
-      📍 ${t.addressBo?.city || "-"}
+      <span class="badge ${t.feedbackStatus==='SUDAH'?'green':'red'}">
+        ${t.feedbackStatus}
+      </span>
 
-      <div style="margin-top:10px">
-        <span class="badge ${t.feedbackStatus==='SUDAH'?'green':'red'}">
-          ${t.feedbackStatus}
-        </span>
-      </div>
-
-      <div style="margin-top:12px">
-        <button onclick="autoOne('${t.id}')">⚡ Eksekusi</button>
-      </div>
+      <br><br>
+      <button onclick="autoOne('${t.id}')">Auto Feedback</button>
     </div>
   `).join("");
 }
 
-/* AUTO ONE */
 async function autoOne(id) {
   await fetch(API + "/api/feedback", {
     method:"POST",
@@ -313,12 +225,8 @@ async function autoOne(id) {
   alert("Done 1");
 }
 
-/* AUTO ALL (WITH PROGRESS UI) */
 async function autoAll() {
-  showLoading("Mulai...", true);
-
-  let current = 0;
-  const total = tasks.length;
+  showLoading("Auto feedback berjalan...");
 
   for (let t of tasks) {
     await fetch(API + "/api/auto", {
@@ -326,9 +234,6 @@ async function autoAll() {
       headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({ cookies, taskId:t.id })
     });
-
-    current++;
-    updateProgress(current,total);
   }
 
   hideLoading();
