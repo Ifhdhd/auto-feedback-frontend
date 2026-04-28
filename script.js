@@ -1,10 +1,9 @@
-const BASE_URL = "https://auto-feedback-backend.onrender.com";
+const API = "https://auto-feedback-backend.onrender.com/api";
 
-let cookies = JSON.parse(localStorage.getItem("cookies")) || [];
-let allData = [];
-let autoRefresh = false;
-let interval;
-
+let cookies = [];
+let page = 1;
+let loading = false;
+let hasMore = true;
 
 // =====================
 // 🔐 LOGIN
@@ -13,155 +12,118 @@ async function login() {
   const account = document.getElementById("account").value;
   const password = document.getElementById("password").value;
 
-  const res = await fetch(`${BASE_URL}/api/login`, {
+  const res = await fetch(API + "/login", {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ account, password })
   });
 
   const data = await res.json();
 
-  if (data.cookies) {
-    cookies = data.cookies.map(c => c.split(";")[0]);
-    localStorage.setItem("cookies", JSON.stringify(cookies));
-
-    alert("✅ Login berhasil");
-  } else {
-    alert("❌ Login gagal");
-  }
-}
-
-
-// =====================
-// 📥 LOAD TASK
-// =====================
-async function loadTasks() {
-  if (!cookies.length) {
-    alert("❌ login dulu");
+  if (!data.success) {
+    alert("Login gagal");
     return;
   }
 
-  document.getElementById("progress").style.width = "20%";
+  cookies = data.cookies.map(c => c.split(";")[0]);
 
-  await fetch(`${BASE_URL}/api/tasks`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ cookies })
+  document.getElementById("actionBox").classList.remove("hidden");
+  alert("Login berhasil");
+}
+
+// =====================
+// 📋 LOAD TASK (ASYNC)
+// =====================
+async function loadTasks() {
+  page = 1;
+  hasMore = true;
+  document.getElementById("taskList").innerHTML = "";
+  fetchPage();
+}
+
+// =====================
+// 📄 FETCH PER PAGE
+// =====================
+async function fetchPage() {
+  if (loading || !hasMore) return;
+
+  loading = true;
+  document.getElementById("loading").style.display = "block";
+
+  const res = await fetch(API + "/tasks/result?page=" + page, {
+    method: "GET"
   });
 
-  document.getElementById("progress").style.width = "60%";
-
-  setTimeout(getResult, 2000);
-}
-
-
-// =====================
-// 🔄 AMBIL HASIL
-// =====================
-async function getResult() {
-  const res = await fetch(`${BASE_URL}/api/tasks/result`);
   const data = await res.json();
 
-  allData = data.data || [];
+  renderSummary(data.summary);
 
-  renderSummary(data.summary || {});
-  renderTable();
+  if (data.data.length === 0) {
+    hasMore = false;
+  } else {
+    renderTasks(data.data);
+    page++;
+  }
 
-  document.getElementById("progress").style.width = "100%";
+  loading = false;
+  document.getElementById("loading").style.display = "none";
 }
 
+// =====================
+// 🧠 SUMMARY
+// =====================
+function renderSummary(s) {
+  document.getElementById("summaryBox").classList.remove("hidden");
+
+  document.getElementById("summary").innerHTML = `
+    Total: ${s.total} |
+    ✅ Sudah: ${s.sudahFeedback} |
+    ❌ Belum: ${s.belumFeedback} |
+    ⏰ Expired: ${s.expired}
+  `;
+}
+
+// =====================
+// 🎯 RENDER TASK
+// =====================
+function renderTasks(tasks) {
+  const list = document.getElementById("taskList");
+
+  tasks.forEach(t => {
+    const el = document.createElement("div");
+    el.className = "task";
+
+    el.innerHTML = `
+      <b>${t.userName}</b><br>
+      💰 ${t.formatDebt}<br>
+      📅 Sisa: ${t.sisaHari ?? "-"} hari<br>
+      📍 ${t.addressBo?.city || "-"}
+    `;
+
+    list.appendChild(el);
+  });
+}
 
 // =====================
 // 🔥 AUTO FEEDBACK
 // =====================
-async function runAuto() {
-  if (!cookies.length) {
-    alert("❌ login dulu");
-    return;
-  }
+async function startAuto() {
+  await fetch(API + "/auto", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cookies })
+  });
 
-  if (!confirm("Jalankan auto feedback?")) return;
-
-  try {
-    const res = await fetch(`${BASE_URL}/api/auto`, {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ cookies })
-    });
-
-    const data = await res.json();
-
-    alert("🚀 " + data.message);
-
-  } catch (err) {
-    alert("❌ gagal auto");
-  }
+  alert("Auto jalan di background 🔥");
 }
 
-
 // =====================
-// 📊 SUMMARY
+// 🔄 INFINITE SCROLL
 // =====================
-function renderSummary(s) {
-  document.getElementById("stat-total").innerText = `Total: ${s.total || 0}`;
-  document.getElementById("stat-sudah").innerText = `Sudah: ${s.sudahFeedback || 0}`;
-  document.getElementById("stat-belum").innerText = `Belum: ${s.belumFeedback || 0}`;
-  document.getElementById("stat-expired").innerText = `Expired: ${s.expired || 0}`;
-}
-
-
-// =====================
-// 🔍 TABLE + SEARCH
-// =====================
-function renderTable() {
-  const keyword = document.getElementById("search").value.toLowerCase();
-
-  const tbody = document.querySelector("#table tbody");
-  tbody.innerHTML = "";
-
-  allData
-    .filter(d => (d.userName || "").toLowerCase().includes(keyword))
-    .forEach(item => {
-      const tr = document.createElement("tr");
-
-      tr.innerHTML = `
-        <td>${item.userName || "-"}</td>
-        <td>${item.dpd || "-"}</td>
-        <td>${item.formatDebt || "-"}</td>
-        <td>${getBadge(item.feedbackStatus)}</td>
-        <td>${item.sisaHari ?? "-"}</td>
-      `;
-
-      tbody.appendChild(tr);
-    });
-}
-
-
-// =====================
-// 🎨 BADGE
-// =====================
-function getBadge(status) {
-  if (status === "SUDAH") {
-    return `<span class="badge sudah-badge">SUDAH</span>`;
+window.addEventListener("scroll", () => {
+  if (
+    window.innerHeight + window.scrollY >= document.body.offsetHeight - 50
+  ) {
+    fetchPage();
   }
-  if (status === "EXPIRED") {
-    return `<span class="badge expired-badge">EXPIRED</span>`;
-  }
-  return `<span class="badge belum-badge">BELUM</span>`;
-}
-
-
-// =====================
-// 🔄 AUTO REFRESH
-// =====================
-function toggleAutoRefresh() {
-  autoRefresh = !autoRefresh;
-
-  if (autoRefresh) {
-    interval = setInterval(getResult, 3000);
-    alert("🔄 Auto refresh ON");
-  } else {
-    clearInterval(interval);
-    alert("⛔ Auto refresh OFF");
-  }
-}
+});
