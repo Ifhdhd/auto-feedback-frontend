@@ -1,250 +1,55 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<title>Auto Feedback App</title>
-
-<style>
-  body {
-    font-family: Arial;
-    background: #0f172a;
-    color: white;
-    padding: 20px;
-  }
-
-  .card {
-    background: #1e293b;
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 15px;
-  }
-
-  input {
-    width: 100%;
-    padding: 10px;
-    margin: 5px 0;
-    border-radius: 5px;
-    border: none;
-  }
-
-  button {
-    padding: 10px;
-    margin-top: 10px;
-    border: none;
-    border-radius: 5px;
-    background: #22c55e;
-    color: white;
-    cursor: pointer;
-    width: 100%;
-  }
-
-  button:hover {
-    background: #16a34a;
-  }
-
-  .task {
-    background: #334155;
-    padding: 10px;
-    border-radius: 8px;
-    margin-top: 10px;
-  }
-
-  .success {
-    color: #22c55e;
-    font-weight: bold;
-  }
-
-  .fail {
-    color: #ef4444;
-    font-weight: bold;
-  }
-
-  .header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>Auto Feedback App</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<h2>🔥 Auto Feedback Web</h2>
+<div class="container">
 
-<div class="card">
-  <h3>Login</h3>
-  <input id="account" placeholder="Nomor HP">
-  <input id="password" type="password" placeholder="Password">
-  <button onclick="login()">Login</button>
-</div>
+  <h1>🔥 Auto Feedback Dashboard</h1>
 
-<div class="card">
-  <div class="header">
-    <div>Total: <span id="total">0</span></div>
-    <div id="summary">-</div>
+  <!-- LOGIN -->
+  <div class="card" id="loginBox">
+    <h2>Login</h2>
+    <input type="text" id="account" placeholder="Nomor HP">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
   </div>
 
-  <button onclick="loadTasks()">Ambil Data</button>
-  <button onclick="runAuto()">Auto Feedback</button>
+  <!-- DASHBOARD -->
+  <div id="dashboard" style="display:none;">
+    
+    <div class="summary">
+      <div class="box total">Total: <span id="total">0</span></div>
+      <div class="box done">Done: <span id="done">0</span></div>
+      <div class="box pending">Pending: <span id="pending">0</span></div>
+      <div class="box expired">Expired: <span id="expired">0</span></div>
+    </div>
 
-  <div id="data"></div>
+    <div class="actions">
+      <button onclick="loadTasks()">🔄 Refresh</button>
+      <button onclick="runAuto()">⚡ Auto Feedback</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nama</th>
+          <th>Status</th>
+          <th>Sisa Hari</th>
+        </tr>
+      </thead>
+      <tbody id="taskTable"></tbody>
+    </table>
+
+  </div>
+
 </div>
 
-<script>
-let cookiesGlobal = [];
-let allTasks = [];
-let feedbackDone = new Set();
-
-// =====================
-// LOGIN
-// =====================
-async function login() {
-  const account = document.getElementById("account").value;
-  const password = document.getElementById("password").value;
-
-  if (!account || !password) {
-    alert("Isi login dulu");
-    return;
-  }
-
-  try {
-    const res = await fetch("https://auto-feedback-backend.onrender.com/api/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ account, password })
-    });
-
-    const result = await res.json();
-
-    if (!result.success) {
-      alert("Login gagal");
-      return;
-    }
-
-    cookiesGlobal = result.cookies;
-
-    alert("Login berhasil ✅");
-
-  } catch (err) {
-    console.error(err);
-    alert("Error login");
-  }
-}
-
-// =====================
-// LOAD TASK
-// =====================
-async function loadTasks() {
-  if (cookiesGlobal.length === 0) {
-    alert("Login dulu!");
-    return;
-  }
-
-  try {
-    const res = await fetch("https://auto-feedback-backend.onrender.com/api/tasks", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        cookies: cookiesGlobal
-      })
-    });
-
-    const result = await res.json();
-
-    if (!result.success) {
-      alert("Gagal ambil data");
-      return;
-    }
-
-    allTasks = result.data;
-    renderData();
-
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-// =====================
-// AUTO FEEDBACK
-// =====================
-async function runAuto() {
-  if (cookiesGlobal.length === 0) {
-    alert("Login dulu!");
-    return;
-  }
-
-  if (allTasks.length === 0) {
-    alert("Ambil data dulu!");
-    return;
-  }
-
-  alert("Auto feedback jalan...");
-
-  for (let t of allTasks) {
-    if (!t.id || !t.addressId) continue;
-
-    await fetch("https://auto-feedback-backend.onrender.com/api/auto", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        cookies: cookiesGlobal
-      })
-    });
-
-    feedbackDone.add(t.id); // tandai sudah
-    renderData();
-
-    await new Promise(r => setTimeout(r, 2000));
-  }
-
-  alert("Selesai 🎉");
-}
-
-// =====================
-// RENDER DATA
-// =====================
-function renderData() {
-  const container = document.getElementById("data");
-  container.innerHTML = "";
-
-  let done = 0;
-  let pending = 0;
-
-  allTasks.forEach(t => {
-    const isDone = feedbackDone.has(t.id);
-
-    if (isDone) done++;
-    else pending++;
-
-    const el = document.createElement("div");
-    el.className = "task";
-
-    el.innerHTML = `
-      <b>${t.userName || "-"}</b><br>
-      Debt: ${t.formatDebt || "-"}<br>
-      DPD: ${t.dpd || "-"}<br>
-      Status: ${isDone 
-        ? "<span class='success'>SUDAH</span>" 
-        : "<span class='fail'>BELUM</span>"}<br>
-      <small>${t.addressBo?.street || "-"}</small>
-    `;
-
-    container.appendChild(el);
-  });
-
-  document.getElementById("total").innerText = allTasks.length;
-
-  document.getElementById("summary").innerHTML = `
-    ✅ ${done} | ⏳ ${pending}
-  `;
-}
-</script>
-
+<script src="script.js"></script>
 </body>
 </html>
