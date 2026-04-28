@@ -2,22 +2,12 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Auto Feedback</title>
+<title>DEWA Dashboard</title>
 
 <style>
-body {
-  background:#0f172a;
-  color:white;
-  font-family:sans-serif;
-  text-align:center;
-}
-
-.card {
-  background:#1e293b;
-  margin:10px;
-  padding:10px;
-  border-radius:10px;
-}
+body { background:#0f172a; color:white; font-family:sans-serif }
+.card { background:#1e293b; padding:10px; margin:10px; border-radius:10px }
+img { width:100%; border-radius:10px }
 </style>
 </head>
 
@@ -28,85 +18,87 @@ body {
 <script>
 const API = "https://auto-feedback-backend.onrender.com";
 
-let userId = null;
-let tasks = [];
+let userId;
+let tasks=[];
 
-function loginUI() {
-  app.innerHTML = `
-    <h2>Login</h2>
-    <input id="acc" placeholder="No HP"><br><br>
-    <input id="pass" type="password"><br><br>
+function loginUI(){
+  app.innerHTML=`
+    <input id="acc"><br>
+    <input id="pass" type="password"><br>
     <button onclick="login()">Login</button>
   `;
 }
 
-async function login() {
-  app.innerHTML = "🔄 Login...";
+async function login(){
+  app.innerHTML="🔄 login...";
 
-  const res = await fetch(API + "/api/login", {
+  const res=await fetch(API+"/api/login",{
     method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({
-      account: acc.value,
-      password: pass.value
+    headers:{ "Content-Type":"application/json"},
+    body:JSON.stringify({
+      account:acc.value,
+      password:pass.value
     })
   });
 
-  const json = await res.json();
+  const j=await res.json();
 
-  if (!json.success) {
-    return app.innerHTML = "❌ Login gagal";
-  }
-
-  userId = json.userId;
+  userId=j.userId;
 
   loadTasks();
 }
 
-async function loadTasks() {
-  app.innerHTML = "📥 Ambil data...";
+async function loadTasks(){
+  app.innerHTML="📥 ambil data...";
 
-  await fetch(API + "/api/tasks", {
+  await fetch(API+"/api/tasks",{
     method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ userId })
+    headers:{ "Content-Type":"application/json"},
+    body:JSON.stringify({userId})
   });
 
-  const interval = setInterval(async () => {
-    const res = await fetch(API + "/api/tasks/result?userId=" + userId);
-    const json = await res.json();
+  const int=setInterval(async ()=>{
+    const p=await fetch(API+"/api/progress?userId="+userId);
+    const prog=await p.json();
 
-    if (json.total > 0) {
-      tasks = json.data;
+    app.innerHTML=`⏳ ${prog.done}/${prog.total}`;
+
+    if(prog.done===prog.total && prog.total>0){
+      clearInterval(int);
+
+      const r=await fetch(API+"/api/tasks/result?userId="+userId);
+      const j=await r.json();
+
+      tasks=j.data;
       render();
-      clearInterval(interval);
     }
 
-  }, 2000);
+  },1000);
 }
 
-function render() {
-  app.innerHTML = `
-    <h2>Total: ${tasks.length}</h2>
-    <button onclick="auto()">Auto Feedback</button>
+function render(){
+  app.innerHTML=`
+    <h2>Total ${tasks.length}</h2>
+    <button onclick="auto()">AUTO</button>
 
-    ${tasks.map(t => `
+    ${tasks.map(t=>`
       <div class="card">
-        <b>${t.userName || "-"}</b><br>
-        ${t.phoneNumber || "-"}
+        <img src="${t.photo||''}">
+        <b>${t.userName}</b><br>
+        Sisa: ${t.sisaHari} hari
       </div>
     `).join("")}
   `;
 }
 
-async function auto() {
-  await fetch(API + "/api/auto", {
+async function auto(){
+  await fetch(API+"/api/auto",{
     method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ userId })
+    headers:{ "Content-Type":"application/json"},
+    body:JSON.stringify({userId})
   });
 
-  alert("🔥 Selesai");
+  alert("🔥 done");
 }
 
 loginUI();
