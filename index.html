@@ -1,213 +1,246 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <title>Auto Feedback Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<meta charset="UTF-8">
+<title>Auto Feedback Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #0f172a;
-      color: white;
-      margin: 0;
-      padding: 20px;
-    }
+<style>
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #0f172a;
+  color: #e2e8f0;
+}
 
-    .card {
-      background: #1e293b;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 15px;
-    }
+/* HEADER */
+.header {
+  position: sticky;
+  top: 0;
+  background: rgba(15,23,42,0.9);
+  backdrop-filter: blur(10px);
+  padding: 15px;
+  border-bottom: 1px solid #1e293b;
+  display: flex;
+  justify-content: space-between;
+}
 
-    input {
-      padding: 10px;
-      width: 100%;
-      margin-bottom: 10px;
-      border-radius: 8px;
-      border: none;
-    }
+/* CARD */
+.card {
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 15px;
+  margin: 10px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+}
 
-    button {
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      background: #22c55e;
-      color: white;
-      cursor: pointer;
-      margin-right: 5px;
-    }
+/* BUTTON */
+button {
+  background: #3b82f6;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+}
+button:hover { background: #2563eb; }
 
-    button:hover {
-      opacity: 0.8;
-    }
+/* LOGIN */
+.login {
+  display:flex;
+  height:100vh;
+  justify-content:center;
+  align-items:center;
+}
+.login-box {
+  background:#1e293b;
+  padding:30px;
+  border-radius:12px;
+  width:300px;
+}
+input {
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+  border-radius:6px;
+  border:none;
+}
 
-    .danger {
-      background: #ef4444;
-    }
+/* LOADING MODAL */
+.modal {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.7);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:18px;
+}
 
-    .loading {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.7);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      font-size: 20px;
-      z-index: 999;
-    }
-  </style>
+/* GRID */
+.grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px,1fr));
+}
+
+/* STATUS */
+.badge {
+  padding:4px 8px;
+  border-radius:6px;
+  font-size:12px;
+}
+.green { background:#16a34a; }
+.red { background:#dc2626; }
+
+/* SKELETON */
+.skeleton {
+  height:120px;
+  background: linear-gradient(90deg,#1e293b,#334155,#1e293b);
+  animation: shimmer 1.2s infinite;
+  border-radius:12px;
+}
+@keyframes shimmer {
+  0%{background-position:-200px 0}
+  100%{background-position:200px 0}
+}
+</style>
 </head>
+
 <body>
 
-<div class="loading" id="loading">
-  ⏳ Sedang memuat data...
-</div>
-
-<div class="card">
-  <h2>🔐 Login</h2>
-  <input id="account" placeholder="Nomor HP"/>
-  <input id="password" type="password" placeholder="Password"/>
-  <button onclick="login()">Login</button>
-</div>
-
-<div class="card">
-  <h2>📊 Data Tasks</h2>
-  <p>Total: <span id="total">0</span></p>
-
-  <button onclick="loadTasks()">🔄 Load Data</button>
-  <button onclick="autoFeedback()" class="danger">🚀 Auto Feedback</button>
-
-  <div id="list"></div>
-</div>
+<div id="app"></div>
 
 <script>
+const API = "https://auto-feedback-backend.onrender.com";
+
 let cookies = [];
 let tasks = [];
 
-function showLoading(state) {
-  document.getElementById("loading").style.display = state ? "flex" : "none";
+function renderLogin() {
+  app.innerHTML = `
+  <div class="login">
+    <div class="login-box">
+      <h2>Login</h2>
+      <input id="acc" placeholder="No HP">
+      <input id="pass" type="password" placeholder="Password">
+      <button onclick="login()">Login</button>
+    </div>
+  </div>`;
 }
 
-// ================= LOGIN =================
+function showLoading(text="Loading...") {
+  const div = document.createElement("div");
+  div.className = "modal";
+  div.id = "loading";
+  div.innerHTML = text;
+  document.body.appendChild(div);
+}
+function hideLoading() {
+  document.getElementById("loading")?.remove();
+}
+
 async function login() {
-  try {
-    showLoading(true);
-
-    const res = await axios.post(
-      "https://auto-feedback-backend.onrender.com/api/login",
-      {
-        account: document.getElementById("account").value,
-        password: document.getElementById("password").value
-      }
-    );
-
-    cookies = res.data.cookies;
-
-    alert("Login berhasil!");
-
-    await loadTasks(); // 🔥 AUTO LOAD setelah login
-
-  } catch (err) {
-    alert("Login gagal");
-  } finally {
-    showLoading(false);
-  }
-}
-
-// ================= LOAD TASK =================
-async function loadTasks() {
-  try {
-    showLoading(true);
-
-    await axios.post(
-      "https://auto-feedback-backend.onrender.com/api/tasks",
-      { cookies }
-    );
-
-    // ambil hasil
-    setTimeout(async () => {
-      const res = await axios.get(
-        "https://auto-feedback-backend.onrender.com/api/tasks/result"
-      );
-
-      tasks = res.data.data || [];
-
-      document.getElementById("total").innerText = res.data.total || 0;
-
-      render();
-
-      showLoading(false);
-    }, 2000);
-
-  } catch (err) {
-    console.log(err);
-    showLoading(false);
-  }
-}
-
-// ================= RENDER =================
-function render() {
-  const el = document.getElementById("list");
-  el.innerHTML = "";
-
-  tasks.forEach((t, i) => {
-    el.innerHTML += `
-      <div class="card">
-        <b>${t.userName}</b><br/>
-        📞 ${t.phoneNumber}<br/>
-        💰 ${t.formatDebt}<br/>
-        📍 ${t.addressBo?.city}<br/>
-        Status: ${t.feedbackStatus}
-      </div>
-    `;
+  showLoading("Login...");
+  const res = await fetch(API + "/api/login", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      account: acc.value,
+      password: pass.value
+    })
   });
+
+  const json = await res.json();
+  cookies = json.cookies;
+
+  hideLoading();
+  renderDashboard();
+
+  loadTasks(); // AUTO LOAD 🔥
 }
 
-// ================= AUTO FEEDBACK =================
-async function autoFeedback() {
-  if (tasks.length === 0) {
-    alert("Data kosong!");
-    return;
-  }
+function renderDashboard() {
+  app.innerHTML = `
+    <div class="header">
+      <div>Total: <span id="total">0</span></div>
+      <button onclick="autoAll()">Auto Feedback ALL</button>
+    </div>
 
-  if (!confirm("Yakin mau auto feedback semua?")) return;
+    <div id="list" class="grid"></div>
+  `;
 
-  showLoading(true);
-
-  let success = 0;
-  let fail = 0;
-
-  for (let i = 0; i < tasks.length; i++) {
-    try {
-      await axios.post(
-        "https://auto-feedback-backend.onrender.com/api/feedback",
-        {
-          cookies,
-          task: tasks[i]
-        }
-      );
-
-      success++;
-      console.log("✅ sukses:", tasks[i].userName);
-
-    } catch (err) {
-      fail++;
-      console.log("❌ gagal:", tasks[i].userName);
-    }
-  }
-
-  showLoading(false);
-
-  alert(`Selesai!\n✅ ${success} sukses\n❌ ${fail} gagal`);
-
-  // reload data setelah feedback
-  loadTasks();
+  // skeleton dulu
+  const list = document.getElementById("list");
+  list.innerHTML = Array(6).fill().map(()=>`<div class="skeleton"></div>`).join("");
 }
+
+async function loadTasks() {
+  showLoading("Ambil data...");
+
+  await fetch(API + "/api/tasks", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ cookies })
+  });
+
+  const res = await fetch(API + "/api/tasks/result");
+  const json = await res.json();
+
+  tasks = json.data || [];
+  document.getElementById("total").innerText = json.total;
+
+  renderList();
+
+  hideLoading();
+}
+
+function renderList() {
+  const list = document.getElementById("list");
+
+  list.innerHTML = tasks.map(t => `
+    <div class="card">
+      <b>${t.userName}</b><br>
+      ${t.phoneNumber}<br><br>
+
+      💰 ${t.formatDebt}<br>
+      📍 ${t.addressBo?.city}<br><br>
+
+      <span class="badge ${t.feedbackStatus==='SUDAH'?'green':'red'}">
+        ${t.feedbackStatus}
+      </span>
+
+      <br><br>
+      <button onclick="autoOne('${t.id}')">Auto Feedback</button>
+    </div>
+  `).join("");
+}
+
+async function autoOne(id) {
+  await fetch(API + "/api/feedback", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ cookies, taskId:id })
+  });
+
+  alert("Done 1");
+}
+
+async function autoAll() {
+  showLoading("Auto feedback berjalan...");
+
+  for (let t of tasks) {
+    await fetch(API + "/api/feedback", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ cookies, taskId:t.id })
+    });
+  }
+
+  hideLoading();
+  alert("Semua selesai 🔥");
+}
+
+renderLogin();
 </script>
 
 </body>
