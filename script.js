@@ -1,18 +1,18 @@
 const API = "https://auto-feedback-backend.onrender.com/api";
 
 let cookies = [];
-let page = 1;
-let loading = false;
-let hasMore = true;
+let allTasks = [];
+let renderIndex = 0;
+const LIMIT = 10; // jumlah tampil per scroll
 
-// =====================
-// 🔐 LOGIN
-// =====================
+// =======================
+// 🔐 LOGIN + AUTO LOAD
+// =======================
 async function login() {
   const account = document.getElementById("account").value;
   const password = document.getElementById("password").value;
 
-  const res = await fetch(API + "/login", {
+  const res = await fetch(`${API}/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ account, password })
@@ -25,105 +25,102 @@ async function login() {
     return;
   }
 
-  cookies = data.cookies.map(c => c.split(";")[0]);
+  cookies = data.cookies;
 
-  document.getElementById("actionBox").classList.remove("hidden");
-  alert("Login berhasil");
+  document.getElementById("loginBox").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
+
+  // 🔥 langsung load semua data
+  loadAllTasks();
 }
 
-// =====================
-// 📋 LOAD TASK (ASYNC)
-// =====================
-async function loadTasks() {
-  page = 1;
-  hasMore = true;
-  document.getElementById("taskList").innerHTML = "";
-  fetchPage();
-}
+// =======================
+// 📥 LOAD SEMUA DATA SEKALI
+// =======================
+async function loadAllTasks() {
+  document.getElementById("loading").classList.remove("hidden");
 
-// =====================
-// 📄 FETCH PER PAGE
-// =====================
-async function fetchPage() {
-  if (loading || !hasMore) return;
-
-  loading = true;
-  document.getElementById("loading").style.display = "block";
-
-  const res = await fetch(API + "/tasks/result?page=" + page, {
-    method: "GET"
+  const res = await fetch(`${API}/tasks`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cookies }) // ❗ TANPA page
   });
 
   const data = await res.json();
 
+  allTasks = data.data || [];
+  renderIndex = 0;
+
   renderSummary(data.summary);
 
-  if (data.data.length === 0) {
-    hasMore = false;
-  } else {
-    renderTasks(data.data);
-    page++;
-  }
+  document.getElementById("taskList").innerHTML = "";
 
-  loading = false;
-  document.getElementById("loading").style.display = "none";
+  renderNextBatch();
+
+  document.getElementById("loading").classList.add("hidden");
 }
 
-// =====================
-// 🧠 SUMMARY
-// =====================
+// =======================
+// 📦 RENDER BERTAHAP (SCROLL)
+// =======================
+function renderNextBatch() {
+  const container = document.getElementById("taskList");
+
+  const next = allTasks.slice(renderIndex, renderIndex + LIMIT);
+
+  next.forEach(t => {
+    container.innerHTML += `
+      <div class="task">
+        <b>${t.userName}</b><br>
+        💰 ${t.formatDebt}<br>
+        📍 ${t.addressBo?.city || "-"}<br>
+        ⏳ Sisa: ${t.sisaHari ?? "-"} hari
+      </div>
+    `;
+  });
+
+  renderIndex += LIMIT;
+}
+
+// =======================
+// 📊 SUMMARY
+// =======================
 function renderSummary(s) {
-  document.getElementById("summaryBox").classList.remove("hidden");
+  if (!s) return;
 
   document.getElementById("summary").innerHTML = `
     Total: ${s.total} |
-    ✅ Sudah: ${s.sudahFeedback} |
-    ❌ Belum: ${s.belumFeedback} |
-    ⏰ Expired: ${s.expired}
+    Sudah: ${s.sudahFeedback} |
+    Belum: ${s.belumFeedback} |
+    Expired: ${s.expired}
   `;
 }
 
-// =====================
-// 🎯 RENDER TASK
-// =====================
-function renderTasks(tasks) {
-  const list = document.getElementById("taskList");
-
-  tasks.forEach(t => {
-    const el = document.createElement("div");
-    el.className = "task";
-
-    el.innerHTML = `
-      <b>${t.userName}</b><br>
-      💰 ${t.formatDebt}<br>
-      📅 Sisa: ${t.sisaHari ?? "-"} hari<br>
-      📍 ${t.addressBo?.city || "-"}
-    `;
-
-    list.appendChild(el);
-  });
-}
-
-// =====================
+// =======================
 // 🔥 AUTO FEEDBACK
-// =====================
+// =======================
 async function startAuto() {
-  await fetch(API + "/auto", {
+  await fetch(`${API}/auto`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ cookies })
   });
 
-  alert("Auto jalan di background 🔥");
+  alert("Auto berjalan 🚀");
 }
 
-// =====================
-// 🔄 INFINITE SCROLL
-// =====================
+// =======================
+// 🔄 REFRESH
+// =======================
+function resetData() {
+  loadAllTasks();
+}
+
+// =======================
+// 📜 SCROLL LOAD
+// =======================
 window.addEventListener("scroll", () => {
-  if (
-    window.innerHeight + window.scrollY >= document.body.offsetHeight - 50
-  ) {
-    fetchPage();
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+    renderNextBatch();
   }
 });
