@@ -2,14 +2,13 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Auto Feedback PRO</title>
+<title>Dashboard</title>
 
 <style>
-body { margin:0; font-family:sans-serif; background:#0f172a; color:#fff }
-.header { padding:15px; background:#1e293b; display:flex; justify-content:space-between }
-.card { background:#1e293b; margin:10px; padding:10px; border-radius:10px }
-img { width:100%; border-radius:10px }
-button { padding:8px 12px; margin:5px }
+body{background:#0f172a;color:white;font-family:sans-serif}
+.card{background:#1e293b;margin:10px;padding:15px;border-radius:10px}
+img{width:100%;border-radius:10px}
+button{padding:8px;margin-top:10px}
 </style>
 </head>
 
@@ -18,128 +17,65 @@ button { padding:8px 12px; margin:5px }
 <div id="app"></div>
 
 <script>
-const API="https://auto-feedback-backend.onrender.com";
+const API = "https://auto-feedback-backend.onrender.com";
 
-let accounts = JSON.parse(localStorage.getItem("accs")||"[]");
-let userId=null;
-let tasks=[];
-
-function saveAcc(id){
-  if(!accounts.includes(id)){
-    accounts.push(id);
-    localStorage.setItem("accs",JSON.stringify(accounts));
-  }
-}
-
-function renderLogin(){
-  app.innerHTML=`
-  <h2>Login</h2>
-  <input id="acc"><br><br>
-  <input id="pass" type="password"><br><br>
-  <button onclick="login()">Login</button>
-
-  <h3>Multi Akun</h3>
-  ${accounts.map(a=>`<button onclick="switchAcc('${a}')">${a}</button>`).join("")}
-  `;
+function loginView(){
+app.innerHTML=`
+<input id="acc" placeholder="No HP"><br>
+<input id="pass" type="password"><br>
+<button onclick="login()">Login</button>
+`;
 }
 
 async function login(){
-  app.innerHTML="🔄 login...";
+const res=await fetch(API+"/api/login",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+account:acc.value,
+password:pass.value
+})
+});
 
-  const res=await fetch(API+"/api/login",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json"},
-    body:JSON.stringify({
-      account:acc.value,
-      password:pass.value
-    })
-  });
+const j=await res.json();
 
-  const j=await res.json();
+if(!j.success) return alert("login gagal");
 
-  if(!j.success) return alert("gagal");
+localStorage.setItem("userId",j.userId);
 
-  userId=j.userId;
-  saveAcc(userId);
-
-  load();
-}
-
-function switchAcc(id){
-  userId=id;
-  load();
+load();
 }
 
 async function load(){
-  app.innerHTML="📥 ambil data...";
+app.innerHTML="loading...";
 
-  await fetch(API+"/api/tasks",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json"},
-    body:JSON.stringify({userId})
-  });
+const res=await fetch(API+"/api/tasks",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+userId:localStorage.getItem("userId")
+})
+});
 
-  const int=setInterval(async ()=>{
-    const p=await fetch(API+"/api/progress?userId="+userId);
-    const prog=await p.json();
+const j=await res.json();
 
-    app.innerHTML=`⏳ ${prog.done}/${prog.total}`;
+if(!j.success) return alert(j.error);
 
-    if(prog.done===prog.total && prog.total>0){
-      clearInterval(int);
-
-      const r=await fetch(API+"/api/tasks/result?userId="+userId);
-      tasks=await r.json();
-
-      render();
-    }
-
-  },1000);
+render(j.data);
 }
 
-function render(){
-  app.innerHTML=`
-  <div class="header">
-    <div>Total ${tasks.length}</div>
-    <div>
-      <button onclick="auto()">AUTO</button>
-      <button onclick="logout()">Logout</button>
-    </div>
-  </div>
-
-  <div>
-    ${tasks.map(t=>`
-      <div class="card">
-        <img src="${t.photo}">
-        <b>${t.name}</b><br>
-        📞 ${t.phoneNumber || "-"}<br>
-        ⏳ ${t.sisa} hari
-      </div>
-    `).join("")}
-  </div>
-  `;
+function render(data){
+app.innerHTML=data.map(t=>`
+<div class="card">
+<b>${t.userName}</b><br>
+${t.phoneNumber}<br>
+Expire: ${t.expire} hari<br><br>
+<img src="${t.photo || ''}">
+</div>
+`).join("");
 }
 
-async function auto(){
-  await fetch(API+"/api/auto",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json"},
-    body:JSON.stringify({userId})
-  });
-  alert("🔥 selesai");
-}
-
-async function logout(){
-  await fetch(API+"/api/logout",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json"},
-    body:JSON.stringify({userId})
-  });
-
-  renderLogin();
-}
-
-renderLogin();
+loginView();
 </script>
 
 </body>
