@@ -1,142 +1,139 @@
-const API = "https://auto-feedback-backend.onrender.com/api";
-
 let cookies = [];
-let allTasks = [];
-let renderIndex = 0;
-const LIMIT = 10;
+let page = 1;
+let loading = false;
+let finished = false;
 
 // =======================
 // 🔐 LOGIN
 // =======================
 async function login() {
+  console.log("LOGIN DIKLIK");
+
   const account = document.getElementById("account").value;
   const password = document.getElementById("password").value;
 
-  const res = await fetch(`${API}/login`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ account, password })
-  });
-
-  const data = await res.json();
-
-  if (!data.success) {
-    alert("Login gagal");
+  if (!account || !password) {
+    alert("Isi dulu!");
     return;
   }
 
-  cookies = data.cookies;
+  try {
+    const res = await fetch("https://auto-feedback-backend.onrender.com/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ account, password })
+    });
 
-  document.getElementById("loginBox").classList.add("hidden");
-  document.getElementById("dashboard").classList.remove("hidden");
+    const data = await res.json();
+    console.log(data);
 
-  loadAllTasks();
+    if (!data.success) {
+      alert("Login gagal");
+      return;
+    }
+
+    cookies = data.cookies;
+
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+
+    loadTasks(); // 🔥 auto load
+
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
 }
 
 // =======================
-// 📥 LOAD SEMUA TASK
+// 📋 LOAD TASKS (SCROLL)
 // =======================
-async function loadAllTasks() {
+async function loadTasks() {
+  if (loading || finished) return;
+
+  loading = true;
   document.getElementById("loading").classList.remove("hidden");
 
-  const res = await fetch(`${API}/tasks`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ cookies })
-  });
+  try {
+    const res = await fetch("https://auto-feedback-backend.onrender.com/api/tasks", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ cookies })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
+    console.log("TASK:", data);
 
-  allTasks = data.data || [];
-  renderIndex = 0;
+    if (!data.success) return;
 
-  renderSummary(data.summary);
+    renderSummary(data.summary);
+    renderTasks(data.data);
 
-  document.getElementById("taskList").innerHTML = "";
+    if (data.data.length === 0) finished = true;
 
-  renderNext();
+  } catch (err) {
+    console.log(err);
+  }
 
+  loading = false;
   document.getElementById("loading").classList.add("hidden");
-}
-
-// =======================
-// 📦 RENDER PER BATCH
-// =======================
-function renderNext() {
-  const container = document.getElementById("taskList");
-
-  const next = allTasks.slice(renderIndex, renderIndex + LIMIT);
-
-  next.forEach(t => {
-    const badge = getStatusBadge(t);
-
-    container.innerHTML += `
-      <div class="task">
-        <b>${t.userName}</b><br>
-        💰 ${t.formatDebt}<br>
-        📍 ${t.addressBo?.city || "-"}<br>
-        ${badge}
-      </div>
-    `;
-  });
-
-  renderIndex += LIMIT;
-}
-
-// =======================
-// 🎯 STATUS BADGE
-// =======================
-function getStatusBadge(t) {
-  if (t.sisaHari === null) {
-    return `<span class="badge yellow">Belum Feedback</span>`;
-  }
-
-  if (t.sisaHari <= 0) {
-    return `<span class="badge red">Expired</span>`;
-  }
-
-  return `<span class="badge green">Aktif (${t.sisaHari} hari)</span>`;
 }
 
 // =======================
 // 📊 SUMMARY
 // =======================
 function renderSummary(s) {
-  if (!s) return;
-
   document.getElementById("summary").innerHTML = `
     Total: ${s.total} |
     ✅ Sudah: ${s.sudahFeedback} |
-    ⏳ Belum: ${s.belumFeedback} |
-    ❌ Expired: ${s.expired}
+    ❌ Belum: ${s.belumFeedback} |
+    ⏰ Expired: ${s.expired}
   `;
 }
 
 // =======================
-// 🚀 AUTO FEEDBACK
+// 📦 RENDER TASK
+// =======================
+function renderTasks(tasks) {
+  const el = document.getElementById("taskList");
+
+  tasks.forEach(t => {
+    const div = document.createElement("div");
+    div.className = "task";
+
+    div.innerHTML = `
+      <b>${t.userName}</b><br>
+      📞 ${t.phoneNumber}<br>
+      💰 ${t.formatDebt}<br>
+      ⏳ Sisa: ${t.sisaHari || "-"} hari
+    `;
+
+    el.appendChild(div);
+  });
+}
+
+// =======================
+// 🔥 AUTO FEEDBACK
 // =======================
 async function startAuto() {
-  await fetch(`${API}/auto`, {
+  if (!cookies.length) {
+    alert("Login dulu!");
+    return;
+  }
+
+  alert("Auto berjalan di backend...");
+
+  fetch("https://auto-feedback-backend.onrender.com/api/auto", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ cookies })
   });
-
-  alert("Auto berjalan di background 🚀");
 }
 
 // =======================
-// 🔄 REFRESH
-// =======================
-function resetData() {
-  loadAllTasks();
-}
-
-// =======================
-// 📜 SCROLL LOAD
+// 🔄 INFINITE SCROLL
 // =======================
 window.addEventListener("scroll", () => {
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-    renderNext();
+  if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100) {
+    loadTasks();
   }
 });
