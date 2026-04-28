@@ -2,12 +2,14 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>DEWA Dashboard</title>
+<title>Auto Feedback PRO</title>
 
 <style>
-body { background:#0f172a; color:white; font-family:sans-serif }
-.card { background:#1e293b; padding:10px; margin:10px; border-radius:10px }
+body { margin:0; font-family:sans-serif; background:#0f172a; color:#fff }
+.header { padding:15px; background:#1e293b; display:flex; justify-content:space-between }
+.card { background:#1e293b; margin:10px; padding:10px; border-radius:10px }
 img { width:100%; border-radius:10px }
+button { padding:8px 12px; margin:5px }
 </style>
 </head>
 
@@ -16,16 +18,28 @@ img { width:100%; border-radius:10px }
 <div id="app"></div>
 
 <script>
-const API = "https://auto-feedback-backend.onrender.com";
+const API="https://auto-feedback-backend.onrender.com";
 
-let userId;
+let accounts = JSON.parse(localStorage.getItem("accs")||"[]");
+let userId=null;
 let tasks=[];
 
-function loginUI(){
+function saveAcc(id){
+  if(!accounts.includes(id)){
+    accounts.push(id);
+    localStorage.setItem("accs",JSON.stringify(accounts));
+  }
+}
+
+function renderLogin(){
   app.innerHTML=`
-    <input id="acc"><br>
-    <input id="pass" type="password"><br>
-    <button onclick="login()">Login</button>
+  <h2>Login</h2>
+  <input id="acc"><br><br>
+  <input id="pass" type="password"><br><br>
+  <button onclick="login()">Login</button>
+
+  <h3>Multi Akun</h3>
+  ${accounts.map(a=>`<button onclick="switchAcc('${a}')">${a}</button>`).join("")}
   `;
 }
 
@@ -43,12 +57,20 @@ async function login(){
 
   const j=await res.json();
 
-  userId=j.userId;
+  if(!j.success) return alert("gagal");
 
-  loadTasks();
+  userId=j.userId;
+  saveAcc(userId);
+
+  load();
 }
 
-async function loadTasks(){
+function switchAcc(id){
+  userId=id;
+  load();
+}
+
+async function load(){
   app.innerHTML="📥 ambil data...";
 
   await fetch(API+"/api/tasks",{
@@ -67,9 +89,8 @@ async function loadTasks(){
       clearInterval(int);
 
       const r=await fetch(API+"/api/tasks/result?userId="+userId);
-      const j=await r.json();
+      tasks=await r.json();
 
-      tasks=j.data;
       render();
     }
 
@@ -78,16 +99,24 @@ async function loadTasks(){
 
 function render(){
   app.innerHTML=`
-    <h2>Total ${tasks.length}</h2>
-    <button onclick="auto()">AUTO</button>
+  <div class="header">
+    <div>Total ${tasks.length}</div>
+    <div>
+      <button onclick="auto()">AUTO</button>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </div>
 
+  <div>
     ${tasks.map(t=>`
       <div class="card">
-        <img src="${t.photo||''}">
-        <b>${t.userName}</b><br>
-        Sisa: ${t.sisaHari} hari
+        <img src="${t.photo}">
+        <b>${t.name}</b><br>
+        📞 ${t.phoneNumber || "-"}<br>
+        ⏳ ${t.sisa} hari
       </div>
     `).join("")}
+  </div>
   `;
 }
 
@@ -97,11 +126,20 @@ async function auto(){
     headers:{ "Content-Type":"application/json"},
     body:JSON.stringify({userId})
   });
-
-  alert("🔥 done");
+  alert("🔥 selesai");
 }
 
-loginUI();
+async function logout(){
+  await fetch(API+"/api/logout",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json"},
+    body:JSON.stringify({userId})
+  });
+
+  renderLogin();
+}
+
+renderLogin();
 </script>
 
 </body>
