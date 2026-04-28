@@ -2,56 +2,34 @@ body {
   font-family: Arial;
   background: #0f172a;
   color: white;
-  margin: 0;
 }
 
 .container {
-  max-width: 900px;
+  max-width: 500px;
   margin: auto;
-  padding: 20px;
-}
-
-.card {
-  background: #1e293b;
-  padding: 20px;
-  border-radius: 10px;
 }
 
 input {
   width: 100%;
-  margin: 10px 0;
   padding: 10px;
-  border-radius: 5px;
-  border: none;
+  margin: 5px 0;
 }
 
 button {
   padding: 10px;
-  border: none;
+  margin: 5px;
   background: #22c55e;
-  color: black;
-  border-radius: 5px;
+  border: none;
+  color: white;
   cursor: pointer;
 }
 
-.hidden {
-  display: none;
-}
-
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.task {
+.card {
   background: #1e293b;
+  padding: 10px;
   margin: 10px 0;
-  padding: 15px;
   border-radius: 10px;
 }
 
-.loading {
-  text-align: center;
-  padding: 20px;
-}
+.expired { color: red; }
+.ok { color: #22c55e; }
