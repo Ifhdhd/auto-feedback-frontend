@@ -1,36 +1,25 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Auto Feedback Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Auto Feedback</title>
 </head>
 <body>
 
-<div class="container">
-  <h2>🚀 Auto Feedback</h2>
+<h2>Login</h2>
+<input id="account" placeholder="Account">
+<input id="password" placeholder="Password" type="password">
+<button onclick="login()">Login</button>
 
-  <!-- LOGIN -->
-  <div class="card">
-    <h3>Login</h3>
-    <input id="account" placeholder="No HP">
-    <input id="password" type="password" placeholder="Password">
-    <button onclick="login()">Login</button>
-  </div>
+<hr>
 
-  <!-- ACTION -->
-  <div class="card">
-    <button onclick="loadTasks()">📥 Load Data</button>
-    <button onclick="autoFeedback()">⚡ Auto Feedback</button>
-  </div>
+<button onclick="loadTasks()">Load Data</button>
 
-  <!-- STATUS -->
-  <div id="status"></div>
+<h3 id="status">Status: -</h3>
+<h3 id="total">Total: -</h3>
 
-  <!-- DATA -->
-  <div id="taskList"></div>
-</div>
+<div id="list"></div>
 
-<script src="script.js"></script>
+<script src="app.js"></script>
+
 </body>
 </html>
