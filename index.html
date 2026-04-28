@@ -66,7 +66,7 @@ input {
   border:none;
 }
 
-/* LOADING MODAL */
+/* LOADING */
 .modal {
   position:fixed;
   inset:0;
@@ -75,7 +75,22 @@ input {
   flex-direction:column;
   justify-content:center;
   align-items:center;
-  font-size:18px;
+}
+
+/* PROGRESS */
+.progress {
+  width:200px;
+  height:10px;
+  background:#334155;
+  border-radius:10px;
+  overflow:hidden;
+  margin-top:10px;
+}
+.progress-bar {
+  height:100%;
+  width:0%;
+  background:#22c55e;
+  transition:0.3s;
 }
 
 /* GRID */
@@ -84,7 +99,7 @@ input {
   grid-template-columns: repeat(auto-fill, minmax(300px,1fr));
 }
 
-/* STATUS */
+/* BADGE */
 .badge {
   padding:4px 8px;
   border-radius:6px;
@@ -92,22 +107,6 @@ input {
 }
 .green { background:#16a34a; }
 .red { background:#dc2626; }
-
-/* PROGRESS BAR */
-.progress {
-  width: 200px;
-  height: 10px;
-  background: #334155;
-  border-radius: 10px;
-  margin-top: 10px;
-  overflow: hidden;
-}
-.progress-bar {
-  height: 100%;
-  width: 0%;
-  background: #22c55e;
-  transition: 0.3s;
-}
 </style>
 </head>
 
@@ -121,6 +120,9 @@ const API = "https://auto-feedback-backend.onrender.com";
 let cookies = [];
 let tasks = [];
 
+// =====================
+// LOGIN UI
+// =====================
 function renderLogin() {
   app.innerHTML = `
   <div class="login">
@@ -133,6 +135,9 @@ function renderLogin() {
   </div>`;
 }
 
+// =====================
+// LOADING
+// =====================
 function showLoading(text="Loading...") {
   const div = document.createElement("div");
   div.className = "modal";
@@ -140,15 +145,15 @@ function showLoading(text="Loading...") {
   div.innerHTML = `
     <div>${text}</div>
     <div class="progress">
-      <div id="progressBar" class="progress-bar"></div>
+      <div id="bar" class="progress-bar"></div>
     </div>
   `;
   document.body.appendChild(div);
 }
 
-function updateProgress(percent){
-  const bar = document.getElementById("progressBar");
-  if(bar) bar.style.width = percent + "%";
+function updateProgress(p) {
+  const bar = document.getElementById("bar");
+  if (bar) bar.style.width = p + "%";
 }
 
 function hideLoading() {
@@ -156,13 +161,14 @@ function hideLoading() {
 }
 
 // =====================
-// LOGIN (FIXED)
+// 🔥 LOGIN FIX FINAL
 // =====================
 async function login() {
   btnLogin.disabled = true;
-  showLoading("Login...");
 
   try {
+    showLoading("Login...");
+
     const res = await fetch(API + "/api/login", {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
@@ -172,27 +178,28 @@ async function login() {
       })
     });
 
+    if (!res.ok) {
+      throw new Error("HTTP " + res.status);
+    }
+
     const json = await res.json();
     console.log("LOGIN:", json);
 
-    if (!json.success) {
-      hideLoading();
-      btnLogin.disabled = false;
-      alert("❌ Login gagal:\n" + JSON.stringify(json.error));
-      return;
+    // ✅ VALIDASI
+    if (!json.cookies) {
+      throw new Error("Login gagal (cookies tidak ada)");
     }
 
     cookies = json.cookies;
 
     hideLoading();
     renderDashboard();
-
     loadTasks();
 
   } catch (err) {
     hideLoading();
     btnLogin.disabled = false;
-    alert("❌ Error: " + err.message);
+    alert("❌ Login gagal: " + err.message);
   }
 }
 
@@ -205,21 +212,17 @@ function renderDashboard() {
       <div>Total: <span id="total">0</span></div>
       <button onclick="autoAll()">Auto Feedback ALL</button>
     </div>
-
     <div id="list" class="grid"></div>
   `;
-
-  const list = document.getElementById("list");
-  list.innerHTML = Array(6).fill().map(()=>`<div class="card">Loading...</div>`).join("");
 }
 
 // =====================
 // LOAD TASKS
 // =====================
 async function loadTasks() {
-  showLoading("Ambil data...");
-
   try {
+    showLoading("Ambil data...");
+
     await fetch(API + "/api/tasks", {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
@@ -279,11 +282,11 @@ async function autoOne(id) {
 }
 
 // =====================
-// AUTO ALL (WITH PROGRESS)
+// AUTO ALL + PROGRESS
 // =====================
 async function autoAll() {
-  const total = tasks.length;
   let done = 0;
+  const total = tasks.length;
 
   showLoading("Auto feedback berjalan...");
 
@@ -302,6 +305,7 @@ async function autoAll() {
   alert("🔥 Semua selesai");
 }
 
+// =====================
 renderLogin();
 </script>
 
