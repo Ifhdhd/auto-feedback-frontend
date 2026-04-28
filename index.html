@@ -72,6 +72,7 @@ input {
   inset:0;
   background:rgba(0,0,0,0.7);
   display:flex;
+  flex-direction:column;
   justify-content:center;
   align-items:center;
   font-size:18px;
@@ -92,16 +93,20 @@ input {
 .green { background:#16a34a; }
 .red { background:#dc2626; }
 
-/* SKELETON */
-.skeleton {
-  height:120px;
-  background: linear-gradient(90deg,#1e293b,#334155,#1e293b);
-  animation: shimmer 1.2s infinite;
-  border-radius:12px;
+/* PROGRESS BAR */
+.progress {
+  width: 200px;
+  height: 10px;
+  background: #334155;
+  border-radius: 10px;
+  margin-top: 10px;
+  overflow: hidden;
 }
-@keyframes shimmer {
-  0%{background-position:-200px 0}
-  100%{background-position:200px 0}
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: #22c55e;
+  transition: 0.3s;
 }
 </style>
 </head>
@@ -123,7 +128,7 @@ function renderLogin() {
       <h2>Login</h2>
       <input id="acc" placeholder="No HP">
       <input id="pass" type="password" placeholder="Password">
-      <button onclick="login()">Login</button>
+      <button id="btnLogin" onclick="login()">Login</button>
     </div>
   </div>`;
 }
@@ -132,33 +137,68 @@ function showLoading(text="Loading...") {
   const div = document.createElement("div");
   div.className = "modal";
   div.id = "loading";
-  div.innerHTML = text;
+  div.innerHTML = `
+    <div>${text}</div>
+    <div class="progress">
+      <div id="progressBar" class="progress-bar"></div>
+    </div>
+  `;
   document.body.appendChild(div);
 }
+
+function updateProgress(percent){
+  const bar = document.getElementById("progressBar");
+  if(bar) bar.style.width = percent + "%";
+}
+
 function hideLoading() {
   document.getElementById("loading")?.remove();
 }
 
+// =====================
+// LOGIN (FIXED)
+// =====================
 async function login() {
+  btnLogin.disabled = true;
   showLoading("Login...");
-  const res = await fetch(API + "/api/login", {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({
-      account: acc.value,
-      password: pass.value
-    })
-  });
 
-  const json = await res.json();
-  cookies = json.cookies;
+  try {
+    const res = await fetch(API + "/api/login", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({
+        account: acc.value,
+        password: pass.value
+      })
+    });
 
-  hideLoading();
-  renderDashboard();
+    const json = await res.json();
+    console.log("LOGIN:", json);
 
-  loadTasks(); // AUTO LOAD 🔥
+    if (!json.success) {
+      hideLoading();
+      btnLogin.disabled = false;
+      alert("❌ Login gagal:\n" + JSON.stringify(json.error));
+      return;
+    }
+
+    cookies = json.cookies;
+
+    hideLoading();
+    renderDashboard();
+
+    loadTasks();
+
+  } catch (err) {
+    hideLoading();
+    btnLogin.disabled = false;
+    alert("❌ Error: " + err.message);
+  }
 }
 
+// =====================
+// DASHBOARD
+// =====================
 function renderDashboard() {
   app.innerHTML = `
     <div class="header">
@@ -169,31 +209,41 @@ function renderDashboard() {
     <div id="list" class="grid"></div>
   `;
 
-  // skeleton dulu
   const list = document.getElementById("list");
-  list.innerHTML = Array(6).fill().map(()=>`<div class="skeleton"></div>`).join("");
+  list.innerHTML = Array(6).fill().map(()=>`<div class="card">Loading...</div>`).join("");
 }
 
+// =====================
+// LOAD TASKS
+// =====================
 async function loadTasks() {
   showLoading("Ambil data...");
 
-  await fetch(API + "/api/tasks", {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ cookies })
-  });
+  try {
+    await fetch(API + "/api/tasks", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ cookies })
+    });
 
-  const res = await fetch(API + "/api/tasks/result");
-  const json = await res.json();
+    const res = await fetch(API + "/api/tasks/result");
+    const json = await res.json();
 
-  tasks = json.data || [];
-  document.getElementById("total").innerText = json.total;
+    tasks = json.data || [];
+    document.getElementById("total").innerText = json.total;
 
-  renderList();
+    renderList();
+
+  } catch (err) {
+    alert("❌ Gagal ambil data");
+  }
 
   hideLoading();
 }
 
+// =====================
+// RENDER LIST
+// =====================
 function renderList() {
   const list = document.getElementById("list");
 
@@ -215,6 +265,9 @@ function renderList() {
   `).join("");
 }
 
+// =====================
+// AUTO ONE
+// =====================
 async function autoOne(id) {
   await fetch(API + "/api/feedback", {
     method:"POST",
@@ -225,7 +278,13 @@ async function autoOne(id) {
   alert("Done 1");
 }
 
+// =====================
+// AUTO ALL (WITH PROGRESS)
+// =====================
 async function autoAll() {
+  const total = tasks.length;
+  let done = 0;
+
   showLoading("Auto feedback berjalan...");
 
   for (let t of tasks) {
@@ -234,10 +293,13 @@ async function autoAll() {
       headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({ cookies, taskId:t.id })
     });
+
+    done++;
+    updateProgress((done/total)*100);
   }
 
   hideLoading();
-  alert("Semua selesai 🔥");
+  alert("🔥 Semua selesai");
 }
 
 renderLogin();
