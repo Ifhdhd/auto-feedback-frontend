@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Auto Feedback PRO++</title>
+<title>Auto Feedback PRO MAX</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -27,7 +27,6 @@ body {
   z-index:10;
 }
 
-/* CONTAINER */
 .container {
   margin-top:80px;
   padding:10px;
@@ -42,6 +41,8 @@ button {
   color:white;
   cursor:pointer;
 }
+
+.logout { background:#dc2626; }
 
 /* LOGIN */
 .login {
@@ -118,6 +119,34 @@ input {
   height:65vh;
   overflow:auto;
 }
+
+/* EXPIRED */
+.expired {
+  color:#facc15;
+  font-size:12px;
+}
+
+/* FOTO */
+.avatar {
+  width:60px;
+  height:60px;
+  border-radius:10px;
+  object-fit:cover;
+  margin-bottom:10px;
+  border:1px solid #1e293b;
+}
+
+/* LOADING */
+.loading {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.7);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:18px;
+  z-index:999;
+}
 </style>
 </head>
 
@@ -129,10 +158,19 @@ input {
 const API = "https://auto-feedback-backend.onrender.com";
 
 let tasks = [];
-let progress = 0;
-let success = 0;
-let fail = 0;
 let interval;
+
+/* ================= LOADING ================= */
+function showLoading(text="Loading..."){
+  const div = document.createElement("div");
+  div.className = "loading";
+  div.id = "loading";
+  div.innerHTML = "⏳ " + text;
+  document.body.appendChild(div);
+}
+function hideLoading(){
+  document.getElementById("loading")?.remove();
+}
 
 /* ================= LOGIN ================= */
 function renderLogin(){
@@ -148,31 +186,43 @@ function renderLogin(){
 }
 
 async function login(){
-  const res = await fetch(API+"/api/login",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({
-      account:acc.value,
-      password:pass.value
-    })
-  });
+  showLoading("Sedang login...");
 
-  const json = await res.json();
+  try{
+    const res = await fetch(API+"/api/login",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({
+        account:acc.value,
+        password:pass.value
+      })
+    });
 
-  if(!json.success){
-    alert("Login gagal");
-    return;
+    const json = await res.json();
+
+    if(!json.success){
+      hideLoading();
+      alert("Login gagal");
+      return;
+    }
+
+    let users = JSON.parse(localStorage.getItem("users") || "[]");
+
+    if(!users.find(u=>u.id === json.userId)){
+      users.push({ id: json.userId, name: json.data?.data?.name });
+    }
+
+    localStorage.setItem("users", JSON.stringify(users));
+    localStorage.setItem("activeUser", json.userId);
+
+    hideLoading();
+    renderDashboard();
+    loadTasks();
+
+  }catch(e){
+    hideLoading();
+    alert("Server error");
   }
-
-  // simpan multi akun
-  let users = JSON.parse(localStorage.getItem("users") || "[]");
-  users.push({ id: json.userId, name: json.data?.data?.name });
-  localStorage.setItem("users", JSON.stringify(users));
-
-  localStorage.setItem("activeUser", json.userId);
-
-  renderDashboard();
-  loadTasks();
 }
 
 /* ================= DASHBOARD ================= */
@@ -189,6 +239,7 @@ function renderDashboard(){
 
     <div>
       <button onclick="autoAll()">🔥 Auto ALL</button>
+      <button class="logout" onclick="logout()">Logout</button>
     </div>
   </div>
 
@@ -213,32 +264,47 @@ function renderDashboard(){
   `;
 }
 
-function switchUser(id){
-  localStorage.setItem("activeUser", id);
-  loadTasks();
-}
-
 /* ================= LOAD TASK ================= */
 async function loadTasks(){
+  showLoading("Mengambil data...");
+
   const userId = localStorage.getItem("activeUser");
 
-  const res = await fetch(API+"/api/tasks",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ userId })
-  });
+  try{
+    const res = await fetch(API+"/api/tasks",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ userId })
+    });
 
-  const json = await res.json();
+    const json = await res.json();
 
-  if(!json.success){
-    alert("Gagal ambil data");
-    return;
+    if(!json.success){
+      hideLoading();
+      alert("Gagal ambil data");
+      return;
+    }
+
+    tasks = json.data || [];
+    document.getElementById("total").innerText = json.total;
+
+    renderList();
+    hideLoading();
+
+  }catch(e){
+    hideLoading();
+    alert("Error ambil data");
   }
+}
 
-  tasks = json.data || [];
-  document.getElementById("total").innerText = json.total;
+/* ================= EXPIRED ================= */
+function hitungExpired(lastTime){
+  const now = Date.now();
+  const diffDays = Math.floor((now - lastTime) / (1000*60*60*24));
+  const sisa = 20 - diffDays;
 
-  renderList();
+  if(sisa <= 0) return "Expired ❌";
+  return sisa + " hari lagi";
 }
 
 /* ================= RENDER ================= */
@@ -247,6 +313,9 @@ function renderList(){
 
   list.innerHTML = tasks.map(t=>`
   <div class="card">
+
+    <img class="avatar" src="${t.photo || 'https://i.imgur.com/1X6JQ0Z.png'}">
+
     <b>${t.userName}</b><br>
     ${t.phoneNumber}<br><br>
 
@@ -256,6 +325,11 @@ function renderList(){
     <span class="badge ${t.feedbackStatus==='SUDAH'?'green':'red'}">
       ${t.feedbackStatus}
     </span>
+
+    <div class="expired">
+      ⏳ ${t.lastFeedbackTime ? hitungExpired(t.lastFeedbackTime) : 'Belum pernah'}
+    </div>
+
   </div>
   `).join("");
 }
@@ -263,10 +337,6 @@ function renderList(){
 /* ================= AUTO ================= */
 async function autoAll(){
   const userId = localStorage.getItem("activeUser");
-
-  success = 0;
-  fail = 0;
-  progress = 0;
 
   await fetch(API+"/api/auto",{
     method:"POST",
@@ -282,16 +352,17 @@ function startRealtime(){
   clearInterval(interval);
 
   interval = setInterval(async ()=>{
-    const res = await fetch(API+"/api/tasks/result?userId="+localStorage.getItem("activeUser"));
+    const userId = localStorage.getItem("activeUser");
+
+    const res = await fetch(API+"/api/tasks/result?userId="+userId);
     const json = await res.json();
 
     const total = json.total || 0;
     const done = json.data.filter(t=>t.feedbackStatus==="SUDAH").length;
 
-    progress = total ? (done/total)*100 : 0;
+    const percent = total ? (done/total)*100 : 0;
 
-    document.getElementById("progress").style.width = progress+"%";
-
+    document.getElementById("progress").style.width = percent+"%";
     document.getElementById("sukses").innerText = done;
     document.getElementById("gagal").innerText = total - done;
 
@@ -300,9 +371,35 @@ function startRealtime(){
       alert("🔥 selesai semua");
     }
 
-  }, 2000);
+  },2000);
 }
 
+/* ================= SWITCH ================= */
+function switchUser(id){
+  localStorage.setItem("activeUser", id);
+  loadTasks();
+}
+
+/* ================= LOGOUT ================= */
+function logout(){
+  const userId = localStorage.getItem("activeUser");
+
+  let users = JSON.parse(localStorage.getItem("users") || "[]");
+  users = users.filter(u=>u.id !== userId);
+
+  localStorage.setItem("users", JSON.stringify(users));
+  localStorage.removeItem("activeUser");
+
+  if(users.length){
+    localStorage.setItem("activeUser", users[0].id);
+    renderDashboard();
+    loadTasks();
+  } else {
+    renderLogin();
+  }
+}
+
+/* INIT */
 renderLogin();
 </script>
 
