@@ -1,116 +1,75 @@
-const BASE_URL = "https://auto-feedback-backend.onrender.com/api";
-
-let cookies = [];
-
-// =====================
-// 🔐 LOGIN
-// =====================
-async function login() {
-  const account = document.getElementById("account").value;
-  const password = document.getElementById("password").value;
-
-  if (!account || !password) {
-    alert("Isi semua field");
-    return;
-  }
-
-  const res = await fetch(`${BASE_URL}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ account, password })
-  });
-
-  const data = await res.json();
-
-  if (!data.success) {
-    alert("Login gagal");
-    return;
-  }
-
-  cookies = data.cookies;
-
-  document.getElementById("loginBox").style.display = "none";
-  document.getElementById("dashboard").style.display = "block";
-
-  loadTasks();
+body {
+  font-family: Arial;
+  background: #020617;
+  color: white;
 }
 
-
-// =====================
-// 📋 LOAD TASK
-// =====================
-async function loadTasks() {
-  const res = await fetch(`${BASE_URL}/tasks`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ cookies })
-  });
-
-  const data = await res.json();
-
-  if (!data.success) {
-    alert("Gagal ambil data");
-    return;
-  }
-
-  renderSummary(data.summary);
-  renderTable(data.data);
+.container {
+  width: 95%;
+  margin: auto;
 }
 
-
-// =====================
-// ⚡ AUTO FEEDBACK
-// =====================
-async function runAuto() {
-  await fetch(`${BASE_URL}/auto`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ cookies })
-  });
-
-  alert("Auto berjalan di background");
+.card {
+  background: #0f172a;
+  padding: 20px;
+  border-radius: 12px;
 }
 
-
-// =====================
-// 📊 SUMMARY
-// =====================
-function renderSummary(s) {
-  document.getElementById("total").innerText = s.total;
-  document.getElementById("done").innerText = s.sudahFeedback;
-  document.getElementById("pending").innerText = s.belumFeedback;
-  document.getElementById("expired").innerText = s.expired;
+input {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 6px;
+  border: none;
 }
 
+button {
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #22c55e;
+  color: black;
+}
 
-// =====================
-// 📄 TABLE
-// =====================
-function renderTable(tasks) {
-  const table = document.getElementById("taskTable");
-  table.innerHTML = "";
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
 
-  tasks.forEach(t => {
-    let statusText = "Belum";
-    let statusClass = "status-pending";
+.summary {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+}
 
-    if (t.hasFeedback && t.sisaHari === 0) {
-      statusText = "Expired";
-      statusClass = "status-expired";
-    } else if (t.hasFeedback) {
-      statusText = "Sudah";
-      statusClass = "status-done";
-    }
+.box {
+  padding: 10px;
+  border-radius: 8px;
+}
 
-    const row = `
-      <tr>
-        <td>${t.id}</td>
-        <td>${t.customerName || "-"}</td>
-        <td class="${statusClass}">${statusText}</td>
-        <td>${t.sisaHari ?? "-"}</td>
-      </tr>
-    `;
+.total { background: #3b82f6; }
+.done { background: #22c55e; }
+.pending { background: #eab308; }
+.expired { background: #ef4444; }
 
-    table.innerHTML += row;
-  });
+table {
+  width: 100%;
+  margin-top: 15px;
+  border-collapse: collapse;
+}
+
+td, th {
+  padding: 10px;
+  border-bottom: 1px solid #1e293b;
+}
+
+.status-done { color: #22c55e; }
+.status-pending { color: #eab308; }
+.status-expired { color: #ef4444; }
+
+/* 🔔 hampir expired */
+.warning {
+  background: rgba(255, 0, 0, 0.2);
 }
