@@ -8,33 +8,29 @@
 <body>
 
 <div class="container">
-  <h1>🚀 Auto Feedback Dashboard</h1>
+  <h1>🔥 Auto Feedback Dashboard</h1>
 
   <!-- LOGIN -->
-  <div class="card">
-    <h3>Login</h3>
-    <input id="account" placeholder="Nomor HP">
-    <input id="password" type="password" placeholder="Password">
+  <div id="loginBox" class="card">
+    <h2>Login</h2>
+    <input type="text" id="account" placeholder="No HP">
+    <input type="password" id="password" placeholder="Password">
     <button onclick="login()">Login</button>
   </div>
 
-  <!-- ACTION -->
-  <div class="card hidden" id="actionBox">
-    <button onclick="loadTasks()">🔄 Load Tasks</button>
-    <button onclick="startAuto()">🔥 Auto Feedback</button>
-  </div>
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="hidden">
 
-  <!-- SUMMARY -->
-  <div class="card hidden" id="summaryBox">
-    <h3>Summary</h3>
-    <div id="summary"></div>
-  </div>
+    <div class="topbar">
+      <button onclick="startAuto()">🚀 Auto Feedback</button>
+      <button onclick="resetData()">🔄 Refresh</button>
+    </div>
 
-  <!-- TASK LIST -->
-  <div class="card hidden">
-    <h3>Tasks</h3>
-    <div id="taskList"></div>
-    <div id="loading">Loading...</div>
+    <div id="summary" class="summary"></div>
+
+    <div id="taskList" class="task-list"></div>
+
+    <div id="loading" class="loading hidden">Loading...</div>
   </div>
 </div>
 
