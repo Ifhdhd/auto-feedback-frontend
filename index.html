@@ -1,96 +1,116 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Dashboard</title>
+<title>Auto Feedback</title>
+
 <style>
-body{background:#0f172a;color:white;font-family:sans-serif}
-.card{background:#1e293b;margin:10px;padding:10px;border-radius:10px}
-img{width:80px;border-radius:10px}
+body {
+  background:#0f172a;
+  color:white;
+  font-family:sans-serif;
+  text-align:center;
+}
+
+.card {
+  background:#1e293b;
+  margin:10px;
+  padding:10px;
+  border-radius:10px;
+}
 </style>
 </head>
+
 <body>
 
 <div id="app"></div>
 
 <script>
-const API="https://auto-feedback-backend.onrender.com";
+const API = "https://auto-feedback-backend.onrender.com";
 
-function loginUI(){
-app.innerHTML=`
-<h2>Login</h2>
-<input id="acc" placeholder="HP"><br>
-<input id="pass" type="password"><br>
-<button onclick="login()">Login</button>`;
+let userId = null;
+let tasks = [];
+
+function loginUI() {
+  app.innerHTML = `
+    <h2>Login</h2>
+    <input id="acc" placeholder="No HP"><br><br>
+    <input id="pass" type="password"><br><br>
+    <button onclick="login()">Login</button>
+  `;
 }
 
-async function login(){
-alert("🔐 login...");
-const res=await fetch(API+"/api/login",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({account:acc.value,password:pass.value})
-});
-const j=await res.json();
+async function login() {
+  app.innerHTML = "🔄 Login...";
 
-if(!j.success)return alert("gagal");
+  const res = await fetch(API + "/api/login", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      account: acc.value,
+      password: pass.value
+    })
+  });
 
-localStorage.setItem("userId",j.userId);
+  const json = await res.json();
 
-dashboard();
-load();
+  if (!json.success) {
+    return app.innerHTML = "❌ Login gagal";
+  }
+
+  userId = json.userId;
+
+  loadTasks();
 }
 
-function dashboard(){
-app.innerHTML=`
-<button onclick="logout()">Logout</button>
-<button onclick="auto()">AUTO ALL</button>
-<div id="list"></div>`;
+async function loadTasks() {
+  app.innerHTML = "📥 Ambil data...";
+
+  await fetch(API + "/api/tasks", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ userId })
+  });
+
+  const interval = setInterval(async () => {
+    const res = await fetch(API + "/api/tasks/result?userId=" + userId);
+    const json = await res.json();
+
+    if (json.total > 0) {
+      tasks = json.data;
+      render();
+      clearInterval(interval);
+    }
+
+  }, 2000);
 }
 
-function logout(){
-localStorage.clear();
-loginUI();
+function render() {
+  app.innerHTML = `
+    <h2>Total: ${tasks.length}</h2>
+    <button onclick="auto()">Auto Feedback</button>
+
+    ${tasks.map(t => `
+      <div class="card">
+        <b>${t.userName || "-"}</b><br>
+        ${t.phoneNumber || "-"}
+      </div>
+    `).join("")}
+  `;
 }
 
-async function load(){
-const id=localStorage.getItem("userId");
+async function auto() {
+  await fetch(API + "/api/auto", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ userId })
+  });
 
-alert("📥 ambil data...");
-
-const res=await fetch(API+"/api/tasks",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({userId:id})
-});
-
-const j=await res.json();
-
-render(j.data||[]);
-}
-
-function render(data){
-list.innerHTML=data.map(t=>`
-<div class="card">
-<img src="${t.photo||''}">
-<br>${t.userName}
-<br>📞 ${t.phoneNumber}
-<br>⏳ sisa ${t.sisaHari}
-</div>`).join("");
-}
-
-async function auto(){
-const id=localStorage.getItem("userId");
-alert("⚡ running...");
-await fetch(API+"/api/auto",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({userId:id})
-});
-alert("selesai");
+  alert("🔥 Selesai");
 }
 
 loginUI();
 </script>
+
 </body>
 </html>
