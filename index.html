@@ -2,38 +2,214 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Auto Feedback Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Auto Feedback App</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f172a;
+      color: #fff;
+      padding: 20px;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    input {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      padding: 10px;
+      margin-top: 10px;
+      width: 100%;
+      border: none;
+      border-radius: 5px;
+      background: #38bdf8;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0ea5e9;
+    }
+
+    .task {
+      background: #334155;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+    }
+
+    .success { color: #22c55e; }
+    .fail { color: #ef4444; }
+  </style>
 </head>
 <body>
 
-<div class="container">
+<h2>🚀 Auto Feedback Dashboard</h2>
 
-  <h1>🚀 Auto Feedback</h1>
-
-  <!-- LOGIN -->
-  <div class="card">
-    <h2>Login</h2>
-    <input id="account" placeholder="Nomor HP">
-    <input id="password" type="password" placeholder="Password">
-    <button onclick="login()">Login</button>
-  </div>
-
-  <!-- ACTION -->
-  <div class="card">
-    <h2>Control</h2>
-    <button onclick="loadTasks()">🔄 Load Data</button>
-    <button onclick="autoFeedback()">⚡ Auto Feedback</button>
-  </div>
-
-  <!-- SUMMARY -->
-  <div id="summary" class="summary"></div>
-
-  <!-- DATA -->
-  <div id="list" class="list"></div>
-
+<div class="card">
+  <h3>🔐 Login</h3>
+  <input type="text" id="account" placeholder="Nomor HP">
+  <input type="password" id="password" placeholder="Password">
+  <button onclick="login()">Login</button>
 </div>
 
-<script src="script.js"></script>
+<div class="card">
+  <h3>📋 Actions</h3>
+  <button onclick="getTasks()">Ambil Tasks</button>
+  <button onclick="runAuto()">Auto Feedback</button>
+</div>
+
+<div class="card">
+  <h3>📊 Summary</h3>
+  <p>Total: <span id="total">0</span></p>
+</div>
+
+<div class="card">
+  <h3>📦 Data</h3>
+  <div id="data"></div>
+</div>
+
+<script>
+let cookiesGlobal = [];
+
+// =====================
+// LOGIN
+// =====================
+async function login() {
+  const account = document.getElementById("account").value;
+  const password = document.getElementById("password").value;
+
+  if (!account || !password) {
+    alert("Isi semua!");
+    return;
+  }
+
+  try {
+    const res = await fetch("https://auto-feedback-backend.onrender.com/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ account, password })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      alert("Login gagal");
+      return;
+    }
+
+    cookiesGlobal = data.cookies;
+
+    alert("✅ Login berhasil");
+    console.log("Cookies:", cookiesGlobal);
+
+  } catch (err) {
+    console.error(err);
+    alert("Error login");
+  }
+}
+
+// =====================
+// GET TASKS
+// =====================
+async function getTasks() {
+  if (cookiesGlobal.length === 0) {
+    alert("Login dulu!");
+    return;
+  }
+
+  try {
+    const res = await fetch("https://auto-feedback-backend.onrender.com/api/tasks", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        cookies: cookiesGlobal
+      })
+    });
+
+    const result = await res.json();
+
+    if (!result.success) {
+      alert("Gagal ambil data");
+      return;
+    }
+
+    document.getElementById("total").innerText = result.total;
+
+    renderData(result.data);
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// =====================
+// AUTO FEEDBACK
+// =====================
+async function runAuto() {
+  if (cookiesGlobal.length === 0) {
+    alert("Login dulu!");
+    return;
+  }
+
+  try {
+    const res = await fetch("https://auto-feedback-backend.onrender.com/api/auto", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        cookies: cookiesGlobal
+      })
+    });
+
+    const data = await res.json();
+
+    alert(data.message);
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// =====================
+// RENDER DATA
+// =====================
+function renderData(tasks) {
+  const container = document.getElementById("data");
+  container.innerHTML = "";
+
+  tasks.forEach(t => {
+    const el = document.createElement("div");
+    el.className = "task";
+
+    el.innerHTML = `
+      <b>${t.userName}</b><br>
+      Debt: ${t.formatDebt}<br>
+      DPD: ${t.dpd}<br>
+      Status: ${t.status}<br>
+      <small>${t.addressBo?.street || "-"}</small>
+    `;
+
+    container.appendChild(el);
+  });
+}
+</script>
+
 </body>
 </html>
