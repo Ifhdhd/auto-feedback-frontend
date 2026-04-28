@@ -7,10 +7,9 @@
 <style>
 body{background:#0f172a;color:white;font-family:sans-serif}
 .card{background:#1e293b;margin:10px;padding:15px;border-radius:10px}
-img{width:100%;border-radius:10px}
 button{padding:10px;margin-top:10px;width:100%}
 input{width:100%;padding:10px;margin:5px 0}
-.center{max-width:300px;margin:100px auto}
+.top{padding:10px;background:#111}
 </style>
 </head>
 
@@ -19,108 +18,80 @@ input{width:100%;padding:10px;margin:5px 0}
 <div id="app"></div>
 
 <script>
-const API = "https://auto-feedback-backend.onrender.com";
+const API="https://auto-feedback-backend.onrender.com";
 
 function loginView(){
 app.innerHTML=`
-<div class="center">
-<h3>Login</h3>
 <input id="acc" placeholder="No HP">
-<input id="pass" type="password" placeholder="Password">
+<input id="pass" type="password">
 <button onclick="login()">Login</button>
-<div id="msg"></div>
-</div>
 `;
 }
 
-function setMsg(text){
-document.getElementById("msg").innerText = text;
-}
-
 async function login(){
-try{
-const account = document.getElementById("acc").value;
-const password = document.getElementById("pass").value;
-
-if(!account || !password){
-return setMsg("isi semua dulu");
-}
-
-setMsg("login...");
-
-const res = await fetch(API+"/api/login",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({ account, password })
-});
-
-const text = await res.text();
-
-// 🔥 DEBUG kalau response bukan JSON
-let j;
-try{
-j = JSON.parse(text);
-}catch{
-setMsg("server error / bukan JSON");
-console.log(text);
-return;
-}
-
-if(!j.success){
-setMsg(j.error || "login gagal");
-return;
-}
-
-localStorage.setItem("userId", j.userId);
-
-setMsg("login sukses");
-
-load();
-
-}catch(err){
-setMsg("error: "+err.message);
-console.log(err);
-}
-}
-
-async function load(){
-try{
-app.innerHTML="loading data...";
-
-const res = await fetch(API+"/api/tasks",{
+const res=await fetch(API+"/api/login",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify({
-userId: localStorage.getItem("userId")
+account:acc.value,
+password:pass.value
 })
 });
 
-const j = await res.json();
+const j=await res.json();
+if(!j.success) return alert("login gagal");
 
-if(!j.success){
-app.innerHTML = "error: "+j.error;
-return;
+localStorage.setItem("userId",j.userId);
+
+load();
 }
 
+async function load(){
+app.innerHTML="loading...";
+
+const res=await fetch(API+"/api/tasks",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+userId:localStorage.getItem("userId")
+})
+});
+
+const j=await res.json();
 render(j.data);
-
-}catch(err){
-app.innerHTML = "error load: "+err.message;
 }
+
+async function autoAll(){
+if(!confirm("jalanin semua?")) return;
+
+alert("jalan...");
+
+const res=await fetch(API+"/api/auto",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+userId:localStorage.getItem("userId")
+})
+});
+
+const j=await res.json();
+
+alert("done: "+j.successCount+" sukses, "+j.failCount+" gagal");
+
+load();
 }
 
 function render(data){
-if(!data.length){
-app.innerHTML = "tidak ada data";
-return;
-}
-
-app.innerHTML = data.map(t=>`
+app.innerHTML=`
+<div class="top">
+TOTAL: ${data.length}
+<button onclick="autoAll()">AUTO FEEDBACK ALL</button>
+</div>
+` + data.map(t=>`
 <div class="card">
-<b>${t.userName || '-'}</b><br>
-${t.phoneNumber || '-'}<br>
-Expire: ${t.expire || 0} hari<br><br>
-<img src="${t.photo || ''}">
+<b>${t.userName}</b><br>
+${t.phoneNumber}<br>
+Expire: ${t.expire} hari<br>
 </div>
 `).join("");
 }
