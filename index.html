@@ -13,12 +13,16 @@
     input, button {
       padding: 10px;
       margin: 5px;
-      border-radius: 6px;
+      border-radius: 8px;
       border: none;
     }
 
+    input {
+      width: 250px;
+    }
+
     button {
-      background: #22c55e;
+      background: linear-gradient(45deg,#22c55e,#16a34a);
       color: white;
       cursor: pointer;
     }
@@ -28,11 +32,18 @@
       margin-top: 20px;
       background: #1e293b;
       border-collapse: collapse;
+      border-radius: 10px;
+      overflow: hidden;
     }
 
     td, th {
-      padding: 10px;
+      padding: 12px;
       border-bottom: 1px solid #334155;
+      text-align: left;
+    }
+
+    th {
+      background: #020617;
     }
 
     .loading {
@@ -43,17 +54,26 @@
       display:flex;
       align-items:center;
       justify-content:center;
+      flex-direction: column;
+      font-size: 20px;
     }
 
     .hidden { display:none; }
+
+    .success { color:#22c55e }
+    .fail { color:#ef4444 }
   </style>
 </head>
 
 <body>
 
-<h2>🔥 Auto Feedback</h2>
+<h2>🔥 Auto Feedback System</h2>
 
-<input id="cookieInput" placeholder="paste cookie disini" style="width:400px;">
+<input id="account" placeholder="No HP">
+<input id="password" placeholder="Password" type="password">
+
+<br>
+
 <button onclick="login()">Login</button>
 <button onclick="autoFeedback()">Auto Feedback All</button>
 
@@ -74,18 +94,29 @@ function hideLoading(){
 }
 
 // =====================
-// LOGIN + AUTO LOAD
+// LOGIN + LOAD TASK
 // =====================
 async function login(){
-  const cookies = document.getElementById("cookieInput").value.split(";");
+  const account = document.getElementById("account").value;
+  const password = document.getElementById("password").value;
 
-  await fetch("/api/login",{
+  showLoading("🔐 Login...");
+
+  const loginRes = await fetch("/api/login",{
     method:"POST",
     headers:{ "Content-Type":"application/json"},
-    body:JSON.stringify({cookies})
+    body:JSON.stringify({ account, password })
   });
 
-  showLoading("🔄 Memuat data...");
+  const loginData = await loginRes.json();
+
+  if(!loginData.success){
+    hideLoading();
+    alert("Login gagal");
+    return;
+  }
+
+  showLoading("📦 Memuat semua data...");
 
   const res = await fetch("/api/tasks");
   const data = await res.json();
@@ -96,12 +127,12 @@ async function login(){
 }
 
 // =====================
-// AUTO FEEDBACK
+// AUTO FEEDBACK (FIX)
 // =====================
 async function autoFeedback(){
   showLoading("🚀 Auto feedback berjalan...");
 
-  const res = await fetch("/api/tasks/auto",{
+  const res = await fetch("/api/auto",{
     method:"POST"
   });
 
@@ -109,11 +140,11 @@ async function autoFeedback(){
 
   hideLoading();
 
-  alert(`Selesai\nSuccess: ${data.successCount}\nFail: ${data.failedCount}`);
+  alert(`Selesai\n✅ Success: ${data.successCount}\n❌ Fail: ${data.failedCount}`);
 }
 
 // =====================
-// RENDER TABLE
+// RENDER
 // =====================
 function render(list){
   const table = document.getElementById("table");
@@ -131,7 +162,9 @@ function render(list){
       <tr>
         <td>${x.userName}</td>
         <td>${x.formatDebt}</td>
-        <td>${x.feedbackStatus}</td>
+        <td class="${x.feedbackStatus === 'SUCCESS' ? 'success' : 'fail'}">
+          ${x.feedbackStatus}
+        </td>
       </tr>
     `;
   });
