@@ -117,197 +117,59 @@ input {
 <script>
 const API = "https://auto-feedback-backend.onrender.com";
 
-let cookies = [];
 let tasks = [];
 
-// =====================
-// LOGIN UI
-// =====================
-function renderLogin() {
-  app.innerHTML = `
-  <div class="login">
-    <div class="login-box">
-      <h2>Login</h2>
-      <input id="acc" placeholder="No HP">
-      <input id="pass" type="password" placeholder="Password">
-      <button id="btnLogin" onclick="login()">Login</button>
-    </div>
-  </div>`;
-}
-
-// =====================
-// LOADING
-// =====================
-function showLoading(text="Loading...") {
-  const div = document.createElement("div");
-  div.className = "modal";
-  div.id = "loading";
-  div.innerHTML = `
-    <div>${text}</div>
-    <div class="progress">
-      <div id="bar" class="progress-bar"></div>
-    </div>
-  `;
-  document.body.appendChild(div);
-}
-
-function updateProgress(p) {
-  const bar = document.getElementById("bar");
-  if (bar) bar.style.width = p + "%";
-}
-
-function hideLoading() {
-  document.getElementById("loading")?.remove();
-}
-
-// =====================
-// 🔥 LOGIN FIX FINAL
-// =====================
+// LOGIN
 async function login() {
-  btnLogin.disabled = true;
-
-  try {
-    showLoading("Login...");
-
-    const res = await fetch(API + "/api/login", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({
-        account: acc.value,
-        password: pass.value
-      })
-    });
-
-    if (!res.ok) {
-      throw new Error("HTTP " + res.status);
-    }
-
-    const json = await res.json();
-    console.log("LOGIN:", json);
-
-    // ✅ VALIDASI
-    if (!json.cookies) {
-      throw new Error("Login gagal (cookies tidak ada)");
-    }
-
-    cookies = json.cookies;
-
-    hideLoading();
-    renderDashboard();
-    loadTasks();
-
-  } catch (err) {
-    hideLoading();
-    btnLogin.disabled = false;
-    alert("❌ Login gagal: " + err.message);
-  }
-}
-
-// =====================
-// DASHBOARD
-// =====================
-function renderDashboard() {
-  app.innerHTML = `
-    <div class="header">
-      <div>Total: <span id="total">0</span></div>
-      <button onclick="autoAll()">Auto Feedback ALL</button>
-    </div>
-    <div id="list" class="grid"></div>
-  `;
-}
-
-// =====================
-// LOAD TASKS
-// =====================
-async function loadTasks() {
-  try {
-    showLoading("Ambil data...");
-
-    await fetch(API + "/api/tasks", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ cookies })
-    });
-
-    const res = await fetch(API + "/api/tasks/result");
-    const json = await res.json();
-
-    tasks = json.data || [];
-    document.getElementById("total").innerText = json.total;
-
-    renderList();
-
-  } catch (err) {
-    alert("❌ Gagal ambil data");
-  }
-
-  hideLoading();
-}
-
-// =====================
-// RENDER LIST
-// =====================
-function renderList() {
-  const list = document.getElementById("list");
-
-  list.innerHTML = tasks.map(t => `
-    <div class="card">
-      <b>${t.userName}</b><br>
-      ${t.phoneNumber}<br><br>
-
-      💰 ${t.formatDebt}<br>
-      📍 ${t.addressBo?.city}<br><br>
-
-      <span class="badge ${t.feedbackStatus==='SUDAH'?'green':'red'}">
-        ${t.feedbackStatus}
-      </span>
-
-      <br><br>
-      <button onclick="autoOne('${t.id}')">Auto Feedback</button>
-    </div>
-  `).join("");
-}
-
-// =====================
-// AUTO ONE
-// =====================
-async function autoOne(id) {
-  await fetch(API + "/api/feedback", {
+  const res = await fetch(API + "/api/login", {
     method:"POST",
     headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ cookies, taskId:id })
+    body: JSON.stringify({
+      account: acc.value,
+      password: pass.value
+    })
   });
 
-  alert("Done 1");
-}
+  const json = await res.json();
 
-// =====================
-// AUTO ALL + PROGRESS
-// =====================
-async function autoAll() {
-  let done = 0;
-  const total = tasks.length;
-
-  showLoading("Auto feedback berjalan...");
-
-  for (let t of tasks) {
-    await fetch(API + "/api/auto", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ cookies, taskId:t.id })
-    });
-
-    done++;
-    updateProgress((done/total)*100);
+  if (!json.success) {
+    return alert("Login gagal");
   }
 
-  hideLoading();
-  alert("🔥 Semua selesai");
+  localStorage.setItem("userId", json.userId);
+
+  loadTasks();
 }
 
-// =====================
-renderLogin();
-</script>
+// LOAD TASKS
+async function loadTasks() {
+  const userId = localStorage.getItem("userId");
 
+  await fetch(API + "/api/tasks", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ userId })
+  });
+
+  const res = await fetch(API + "/api/tasks/result?userId=" + userId);
+  const json = await res.json();
+
+  tasks = json.data;
+  console.log(tasks);
+}
+
+// AUTO ALL
+async function autoAll() {
+  const userId = localStorage.getItem("userId");
+
+  await fetch(API + "/api/auto", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ userId })
+  });
+
+  alert("Auto jalan");
+}
+</script>
 </body>
 </html>
