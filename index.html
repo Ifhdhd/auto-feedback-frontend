@@ -2,271 +2,94 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Auto Feedback Dashboard</title>
+<title>Auto Feedback</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-:root {
-  --bg: #0a0f1c;
-  --card: rgba(20, 30, 48, 0.95);
-  --border: #334155;
-  --primary: #3b82f6;
-  --success: #22c55e;
-  --danger: #ef4444;
-  --text: #e2e8f0;
-  --text-muted: #94a3b8;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 body {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
+  margin:0;
+  font-family:sans-serif;
+  background:#020617;
+  color:white;
 }
 
 /* HEADER */
 .header {
-  position: sticky;
-  top: 0;
-  background: rgba(10, 15, 28, 0.95);
-  backdrop-filter: blur(16px);
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 100;
-}
-
-.header-left h1 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  background: linear-gradient(90deg, #60a5fa, #a5b4fc);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.header-left .total {
-  color: var(--text-muted);
-  font-size: 1rem;
-  margin-top: 4px;
-}
-
-.header button {
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
-  color: white;
-  border: none;
-  padding: 14px 28px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 1.05rem;
-  cursor: pointer;
-  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
-  transition: all 0.3s ease;
-}
-
-.header button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(59, 130, 246, 0.5);
-}
-
-/* LOGIN */
-.login {
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: linear-gradient(135deg, #0a0f1c 0%, #1e2937 100%);
-}
-
-.login-box {
-  background: rgba(30, 41, 59, 0.95);
-  padding: 40px 36px;
-  border-radius: 20px;
-  width: 100%;
-  max-width: 380px;
-  border: 1px solid #475569;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-}
-
-.login-box h2 {
-  text-align: center;
-  margin-bottom: 28px;
-  font-size: 2rem;
-  font-weight: 700;
-  color: white;
-}
-
-.login-box input {
-  width: 100%;
-  padding: 16px 18px;
-  margin: 12px 0;
-  background: #1e2937;
-  border: 1px solid #475569;
-  border-radius: 12px;
-  color: white;
-  font-size: 1.05rem;
-}
-
-.login-box input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-}
-
-.login-box button {
-  width: 100%;
-  padding: 16px;
-  margin-top: 20px;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-/* GRID */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 24px;
-  padding: 28px;
-  max-width: 1600px;
-  margin: 0 auto;
+  padding:15px;
+  background:#020617;
+  border-bottom:1px solid #1e293b;
+  display:flex;
+  justify-content:space-between;
 }
 
 /* CARD */
 .card {
-  background: var(--card);
-  border-radius: 20px;
-  padding: 24px;
-  border: 1px solid var(--border);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-  transition: all 0.4s ease;
-  position: relative;
-  overflow: hidden;
+  background:#0f172a;
+  padding:15px;
+  border-radius:12px;
 }
 
-.card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 25px 50px rgba(59, 130, 246, 0.25);
-  border-color: #60a5fa;
-}
-
-.card .avatar {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #3b82f6, #a5b4fc);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: bold;
-  font-size: 1.2rem;
-  margin-bottom: 16px;
-}
-
-.card b {
-  font-size: 1.25rem;
-  color: white;
-}
-
-.card .phone {
-  color: var(--text-muted);
-  font-size: 0.98rem;
-  margin: 8px 0 20px 0;
-}
-
-.card .debt {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--success);
-  margin-bottom: 8px;
-}
-
-.card .location {
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.95rem;
-}
-
-.badge {
-  padding: 6px 16px;
-  border-radius: 9999px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  display: inline-block;
-  margin: 16px 0;
-}
-
-.green { 
-  background: rgba(34, 197, 94, 0.2); 
-  color: #86efac; 
-  border: 1px solid #4ade80;
-}
-
-.red { 
-  background: rgba(239, 68, 68, 0.2); 
-  color: #fda4af; 
-  border: 1px solid #f87171;
+/* GRID */
+.grid {
+  display:grid;
+  gap:10px;
+  padding:10px;
+  grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
 }
 
 /* BUTTON */
-.card button {
-  width: 100%;
-  padding: 14px;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 1.02rem;
-  cursor: pointer;
-  margin-top: 12px;
-  transition: all 0.3s ease;
+button {
+  background:#3b82f6;
+  border:none;
+  padding:10px;
+  border-radius:8px;
+  color:white;
+  cursor:pointer;
 }
 
-.card button:hover {
-  transform: scale(1.03);
-  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.4);
+/* LOGIN */
+.login {
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.login-box {
+  background:#0f172a;
+  padding:20px;
+  border-radius:12px;
+}
+input {
+  display:block;
+  width:100%;
+  margin:10px 0;
+  padding:10px;
 }
 
-/* LOADING */
+/* MODAL */
 .modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(10, 15, 28, 0.9);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  font-size: 1.3rem;
-  backdrop-filter: blur(10px);
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.7);
+  display:flex;
+  justify-content:center;
+  align-items:center;
 }
 
-/* SKELETON */
-.skeleton {
-  height: 220px;
-  background: linear-gradient(90deg, #1e2937 25%, #334155 50%, #1e2937 75%);
-  background-size: 400% 100%;
-  animation: shimmer 1.8s infinite;
-  border-radius: 20px;
+/* PROGRESS */
+.progress {
+  width:300px;
 }
-
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+.bar {
+  height:10px;
+  background:#111;
+  border-radius:10px;
+  overflow:hidden;
+}
+.fill {
+  height:100%;
+  width:0%;
+  background:#22c55e;
 }
 </style>
 </head>
@@ -276,132 +99,135 @@ body {
 <div id="app"></div>
 
 <script>
-// === JAVASCRIPT TETAP SAMA (TIDAK DIUBAH) ===
 const API = "https://auto-feedback-backend.onrender.com";
 
-let cookies = [];
-let tasks = [];
-
-function renderLogin() {
+/* LOGIN */
+function renderLogin(){
   app.innerHTML = `
   <div class="login">
     <div class="login-box">
-      <h2>Auto Feedback</h2>
-      <input id="acc" placeholder="Nomor HP">
+      <h2>Login</h2>
+      <input id="acc" placeholder="No HP">
       <input id="pass" type="password" placeholder="Password">
-      <button onclick="login()">Masuk ke Dashboard</button>
+      <button onclick="login()">Login</button>
     </div>
   </div>`;
 }
 
-function showLoading(text="Loading...") {
-  const div = document.createElement("div");
-  div.className = "modal";
-  div.id = "loading";
-  div.innerHTML = text;
-  document.body.appendChild(div);
+/* LOADING */
+function show(text,progress=false){
+  const d=document.createElement("div");
+  d.className="modal";
+  d.id="m";
+
+  d.innerHTML = progress ? `
+    <div class="progress">
+      <div id="txt">${text}</div>
+      <div class="bar"><div id="fill" class="fill"></div></div>
+    </div>` : text;
+
+  document.body.appendChild(d);
+}
+function hide(){ document.getElementById("m")?.remove(); }
+
+function update(i,t){
+  const p=Math.floor(i/t*100);
+  fill.style.width=p+"%";
+  txt.innerText=i+"/"+t+" ("+p+"%)";
 }
 
-function hideLoading() {
-  document.getElementById("loading")?.remove();
-}
+/* LOGIN */
+async function login(){
+  show("login...");
 
-async function login() {
-  showLoading("Sedang login...");
-  const res = await fetch(API + "/api/login", {
+  await fetch(API+"/api/login",{
     method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({
-      account: acc.value,
-      password: pass.value
-    })
+    headers:{ "Content-Type":"application/json"},
+    body:JSON.stringify({
+      account:acc.value,
+      password:pass.value
+    }),
+    credentials:"include"
   });
 
-  const json = await res.json();
-  cookies = json.cookies;
-
-  hideLoading();
-  renderDashboard();
-  loadTasks();
+  hide();
+  renderDash();
+  load();
 }
 
-function renderDashboard() {
-  app.innerHTML = `
+/* DASH */
+function renderDash(){
+  app.innerHTML=`
     <div class="header">
-      <div class="header-left">
-        <h1>Auto Feedback Dashboard</h1>
-        <div class="total">Total Task: <span id="total">0</span></div>
-      </div>
-      <button onclick="autoAll()">🚀 Auto Feedback SEMUA</button>
+      <div>Total: <span id="total">0</span></div>
+      <button onclick="autoAll()">Auto All</button>
     </div>
-
     <div id="list" class="grid"></div>
   `;
-
-  const list = document.getElementById("list");
-  list.innerHTML = Array(6).fill().map(()=>`<div class="skeleton"></div>`).join("");
 }
 
-async function loadTasks() {
-  showLoading("Mengambil data tugas...");
-  
-  await fetch(API + "/api/tasks", {
+/* LOAD */
+async function load(){
+  show("ambil data...");
+
+  await fetch(API+"/api/tasks",{
     method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ cookies })
+    credentials:"include"
   });
 
-  const res = await fetch(API + "/api/tasks/result");
-  const json = await res.json();
+  const r=await fetch(API+"/api/tasks/result",{credentials:"include"});
+  const j=await r.json();
 
-  tasks = json.data || [];
-  document.getElementById("total").innerText = json.total || 0;
+  total.innerText=j.total;
 
-  renderList();
-  hideLoading();
-}
-
-function renderList() {
-  const list = document.getElementById("list");
-
-  list.innerHTML = tasks.map(t => `
+  list.innerHTML=j.data.map(x=>`
     <div class="card">
-      <div class="avatar">👤</div>
-      <b>${t.userName}</b>
-      <div class="phone">${t.phoneNumber}</div>
-      
-      <div class="debt">Rp ${t.formatDebt}</div>
-      <div class="location">📍 ${t.addressBo?.city || '-'}</div>
-
-      <span class="badge ${t.feedbackStatus==='SUDAH' ? 'green' : 'red'}">
-        ${t.feedbackStatus}
-      </span>
-
-      <button onclick="autoOne('${t.id}')">Auto Feedback</button>
+      <b>${x.userName}</b><br>
+      ${x.formatDebt}<br>
+      ${x.feedbackStatus}<br><br>
+      <button onclick="one('${x.id}')">Run</button>
     </div>
   `).join("");
+
+  hide();
 }
 
-async function autoOne(id) {
-  await fetch(API + "/api/feedback", {
+/* AUTO 1 */
+async function one(id){
+  await fetch(API+"/api/feedback",{
     method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ cookies, taskId:id })
+    headers:{ "Content-Type":"application/json"},
+    body:JSON.stringify({taskId:id}),
+    credentials:"include"
   });
-  alert("✅ Feedback berhasil dilakukan");
+
+  alert("done");
 }
 
-async function autoAll() {
-  showLoading("Auto feedback sedang berjalan...");
-  for (let t of tasks) {
-    await fetch(API + "/api/auto", {
+/* AUTO ALL (PROGRESS) */
+async function autoAll(){
+  const r=await fetch(API+"/api/tasks/result",{credentials:"include"});
+  const j=await r.json();
+  const tasks=j.data;
+
+  show("start...",true);
+
+  let i=0;
+
+  for(let t of tasks){
+    await fetch(API+"/api/feedback",{
       method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ cookies, taskId:t.id })
+      headers:{ "Content-Type":"application/json"},
+      body:JSON.stringify({taskId:t.id}),
+      credentials:"include"
     });
+
+    i++;
+    update(i,tasks.length);
   }
-  hideLoading();
-  alert("🎉 Semua feedback telah selesai!");
+
+  hide();
+  alert("selesai 🔥");
 }
 
 renderLogin();
