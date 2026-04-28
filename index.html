@@ -2,406 +2,95 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Auto Feedback PRO MAX</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<title>Dashboard</title>
 <style>
-body {
-  margin:0;
-  font-family:'Segoe UI',sans-serif;
-  background:#020617;
-  color:#e2e8f0;
-}
-
-/* HEADER */
-.header {
-  position:fixed;
-  top:0;
-  left:0;
-  right:0;
-  display:flex;
-  justify-content:space-between;
-  padding:15px;
-  background:#020617;
-  border-bottom:1px solid #1e293b;
-  z-index:10;
-}
-
-.container {
-  margin-top:80px;
-  padding:10px;
-}
-
-/* BUTTON */
-button {
-  background:linear-gradient(45deg,#3b82f6,#06b6d4);
-  border:none;
-  padding:8px 14px;
-  border-radius:8px;
-  color:white;
-  cursor:pointer;
-}
-
-.logout { background:#dc2626; }
-
-/* LOGIN */
-.login {
-  display:flex;
-  height:100vh;
-  justify-content:center;
-  align-items:center;
-}
-.login-box {
-  background:#020617;
-  padding:30px;
-  border-radius:12px;
-  border:1px solid #1e293b;
-}
-input {
-  width:100%;
-  padding:10px;
-  margin:10px 0;
-  border-radius:6px;
-  border:1px solid #1e293b;
-  background:#020617;
-  color:white;
-}
-
-/* GRID */
-.grid {
-  display:grid;
-  grid-template-columns: repeat(auto-fill,minmax(300px,1fr));
-}
-
-/* CARD */
-.card {
-  background:#020617;
-  border:1px solid #1e293b;
-  border-radius:12px;
-  padding:15px;
-  margin:10px;
-}
-
-/* BADGE */
-.badge { padding:4px 8px; border-radius:6px; font-size:12px; }
-.green { background:#16a34a; }
-.red { background:#dc2626; }
-
-/* PROGRESS */
-.progress-box {
-  width:100%;
-  background:#1e293b;
-  border-radius:10px;
-  overflow:hidden;
-  margin:10px 0;
-}
-.progress-bar {
-  height:10px;
-  background:#22c55e;
-  width:0%;
-}
-
-/* STATS */
-.stats {
-  display:flex;
-  gap:10px;
-  margin:10px 0;
-}
-.stat {
-  background:#020617;
-  padding:10px;
-  border:1px solid #1e293b;
-  border-radius:10px;
-}
-
-/* SCROLL */
-.list-container {
-  height:65vh;
-  overflow:auto;
-}
-
-/* EXPIRED */
-.expired {
-  color:#facc15;
-  font-size:12px;
-}
-
-/* FOTO */
-.avatar {
-  width:60px;
-  height:60px;
-  border-radius:10px;
-  object-fit:cover;
-  margin-bottom:10px;
-  border:1px solid #1e293b;
-}
-
-/* LOADING */
-.loading {
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.7);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-size:18px;
-  z-index:999;
-}
+body{background:#0f172a;color:white;font-family:sans-serif}
+.card{background:#1e293b;margin:10px;padding:10px;border-radius:10px}
+img{width:80px;border-radius:10px}
 </style>
 </head>
-
 <body>
 
 <div id="app"></div>
 
 <script>
-const API = "https://auto-feedback-backend.onrender.com";
+const API="https://auto-feedback-backend.onrender.com";
 
-let tasks = [];
-let interval;
-
-/* ================= LOADING ================= */
-function showLoading(text="Loading..."){
-  const div = document.createElement("div");
-  div.className = "loading";
-  div.id = "loading";
-  div.innerHTML = "⏳ " + text;
-  document.body.appendChild(div);
-}
-function hideLoading(){
-  document.getElementById("loading")?.remove();
-}
-
-/* ================= LOGIN ================= */
-function renderLogin(){
-  app.innerHTML = `
-  <div class="login">
-    <div class="login-box">
-      <h2>Login Multi Akun</h2>
-      <input id="acc" placeholder="No HP">
-      <input id="pass" type="password" placeholder="Password">
-      <button onclick="login()">Login</button>
-    </div>
-  </div>`;
+function loginUI(){
+app.innerHTML=`
+<h2>Login</h2>
+<input id="acc" placeholder="HP"><br>
+<input id="pass" type="password"><br>
+<button onclick="login()">Login</button>`;
 }
 
 async function login(){
-  showLoading("Sedang login...");
+alert("🔐 login...");
+const res=await fetch(API+"/api/login",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({account:acc.value,password:pass.value})
+});
+const j=await res.json();
 
-  try{
-    const res = await fetch(API+"/api/login",{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({
-        account:acc.value,
-        password:pass.value
-      })
-    });
+if(!j.success)return alert("gagal");
 
-    const json = await res.json();
+localStorage.setItem("userId",j.userId);
 
-    if(!json.success){
-      hideLoading();
-      alert("Login gagal");
-      return;
-    }
-
-    let users = JSON.parse(localStorage.getItem("users") || "[]");
-
-    if(!users.find(u=>u.id === json.userId)){
-      users.push({ id: json.userId, name: json.data?.data?.name });
-    }
-
-    localStorage.setItem("users", JSON.stringify(users));
-    localStorage.setItem("activeUser", json.userId);
-
-    hideLoading();
-    renderDashboard();
-    loadTasks();
-
-  }catch(e){
-    hideLoading();
-    alert("Server error");
-  }
+dashboard();
+load();
 }
 
-/* ================= DASHBOARD ================= */
-function renderDashboard(){
-  const users = JSON.parse(localStorage.getItem("users") || "[]");
-
-  app.innerHTML = `
-  <div class="header">
-    <div>
-      <select onchange="switchUser(this.value)">
-        ${users.map(u=>`<option value="${u.id}">${u.name||u.id}</option>`).join("")}
-      </select>
-    </div>
-
-    <div>
-      <button onclick="autoAll()">🔥 Auto ALL</button>
-      <button class="logout" onclick="logout()">Logout</button>
-    </div>
-  </div>
-
-  <div class="container">
-
-    <div>Total: <span id="total">0</span></div>
-
-    <div class="progress-box">
-      <div id="progress" class="progress-bar"></div>
-    </div>
-
-    <div class="stats">
-      <div class="stat">✅ <span id="sukses">0</span></div>
-      <div class="stat">❌ <span id="gagal">0</span></div>
-    </div>
-
-    <div class="list-container">
-      <div id="list" class="grid"></div>
-    </div>
-
-  </div>
-  `;
+function dashboard(){
+app.innerHTML=`
+<button onclick="logout()">Logout</button>
+<button onclick="auto()">AUTO ALL</button>
+<div id="list"></div>`;
 }
 
-/* ================= LOAD TASK ================= */
-async function loadTasks(){
-  showLoading("Mengambil data...");
-
-  const userId = localStorage.getItem("activeUser");
-
-  try{
-    const res = await fetch(API+"/api/tasks",{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ userId })
-    });
-
-    const json = await res.json();
-
-    if(!json.success){
-      hideLoading();
-      alert("Gagal ambil data");
-      return;
-    }
-
-    tasks = json.data || [];
-    document.getElementById("total").innerText = json.total;
-
-    renderList();
-    hideLoading();
-
-  }catch(e){
-    hideLoading();
-    alert("Error ambil data");
-  }
-}
-
-/* ================= EXPIRED ================= */
-function hitungExpired(lastTime){
-  const now = Date.now();
-  const diffDays = Math.floor((now - lastTime) / (1000*60*60*24));
-  const sisa = 20 - diffDays;
-
-  if(sisa <= 0) return "Expired ❌";
-  return sisa + " hari lagi";
-}
-
-/* ================= RENDER ================= */
-function renderList(){
-  const list = document.getElementById("list");
-
-  list.innerHTML = tasks.map(t=>`
-  <div class="card">
-
-    <img class="avatar" src="${t.photo || 'https://i.imgur.com/1X6JQ0Z.png'}">
-
-    <b>${t.userName}</b><br>
-    ${t.phoneNumber}<br><br>
-
-    💰 ${t.formatDebt}<br>
-    📍 ${t.addressBo?.city}<br><br>
-
-    <span class="badge ${t.feedbackStatus==='SUDAH'?'green':'red'}">
-      ${t.feedbackStatus}
-    </span>
-
-    <div class="expired">
-      ⏳ ${t.lastFeedbackTime ? hitungExpired(t.lastFeedbackTime) : 'Belum pernah'}
-    </div>
-
-  </div>
-  `).join("");
-}
-
-/* ================= AUTO ================= */
-async function autoAll(){
-  const userId = localStorage.getItem("activeUser");
-
-  await fetch(API+"/api/auto",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ userId })
-  });
-
-  startRealtime();
-}
-
-/* ================= REALTIME ================= */
-function startRealtime(){
-  clearInterval(interval);
-
-  interval = setInterval(async ()=>{
-    const userId = localStorage.getItem("activeUser");
-
-    const res = await fetch(API+"/api/tasks/result?userId="+userId);
-    const json = await res.json();
-
-    const total = json.total || 0;
-    const done = json.data.filter(t=>t.feedbackStatus==="SUDAH").length;
-
-    const percent = total ? (done/total)*100 : 0;
-
-    document.getElementById("progress").style.width = percent+"%";
-    document.getElementById("sukses").innerText = done;
-    document.getElementById("gagal").innerText = total - done;
-
-    if(done === total){
-      clearInterval(interval);
-      alert("🔥 selesai semua");
-    }
-
-  },2000);
-}
-
-/* ================= SWITCH ================= */
-function switchUser(id){
-  localStorage.setItem("activeUser", id);
-  loadTasks();
-}
-
-/* ================= LOGOUT ================= */
 function logout(){
-  const userId = localStorage.getItem("activeUser");
-
-  let users = JSON.parse(localStorage.getItem("users") || "[]");
-  users = users.filter(u=>u.id !== userId);
-
-  localStorage.setItem("users", JSON.stringify(users));
-  localStorage.removeItem("activeUser");
-
-  if(users.length){
-    localStorage.setItem("activeUser", users[0].id);
-    renderDashboard();
-    loadTasks();
-  } else {
-    renderLogin();
-  }
+localStorage.clear();
+loginUI();
 }
 
-/* INIT */
-renderLogin();
-</script>
+async function load(){
+const id=localStorage.getItem("userId");
 
+alert("📥 ambil data...");
+
+const res=await fetch(API+"/api/tasks",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({userId:id})
+});
+
+const j=await res.json();
+
+render(j.data||[]);
+}
+
+function render(data){
+list.innerHTML=data.map(t=>`
+<div class="card">
+<img src="${t.photo||''}">
+<br>${t.userName}
+<br>📞 ${t.phoneNumber}
+<br>⏳ sisa ${t.sisaHari}
+</div>`).join("");
+}
+
+async function auto(){
+const id=localStorage.getItem("userId");
+alert("⚡ running...");
+await fetch(API+"/api/auto",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({userId:id})
+});
+alert("selesai");
+}
+
+loginUI();
+</script>
 </body>
 </html>
