@@ -3,72 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Auto Feedback Dashboard</title>
-  <script defer src="script.js"></script>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: #fff;
-      margin: 0;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: auto;
-      padding: 20px;
-    }
-
-    .card {
-      background: #1e293b;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 15px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    }
-
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 5px 0;
-      border-radius: 8px;
-      border: none;
-    }
-
-    button {
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-right: 5px;
-    }
-
-    .btn-primary { background: #3b82f6; color: white; }
-    .btn-success { background: #22c55e; color: white; }
-    .btn-danger { background: #ef4444; color: white; }
-
-    .hidden { display: none; }
-
-    .task {
-      border-bottom: 1px solid #334155;
-      padding: 10px 0;
-    }
-
-    .badge {
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 12px;
-    }
-
-    .green { background: #16a34a; }
-    .yellow { background: #eab308; }
-    .red { background: #dc2626; }
-
-    #loading {
-      text-align: center;
-      padding: 10px;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -77,29 +12,27 @@
   <!-- LOGIN -->
   <div id="loginBox" class="card">
     <h2>🔐 Login</h2>
-    <input id="account" placeholder="Nomor HP">
-    <input id="password" type="password" placeholder="Password">
-    <button class="btn-primary" onclick="login()">Login</button>
+    <input id="account" placeholder="No HP" />
+    <input id="password" type="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
   </div>
 
   <!-- DASHBOARD -->
   <div id="dashboard" class="hidden">
-
-    <div class="card">
+    <div class="topbar">
       <h2>📊 Dashboard</h2>
-      <div id="summary">-</div>
-      <br>
-      <button class="btn-success" onclick="startAuto()">🚀 Auto Feedback</button>
-      <button class="btn-primary" onclick="resetData()">🔄 Refresh</button>
+      <button onclick="startAuto()">🔥 Auto Feedback</button>
     </div>
 
-    <div id="taskList" class="card"></div>
+    <div id="summary" class="summary"></div>
 
-    <div id="loading" class="hidden">⏳ Loading...</div>
+    <div id="taskList" class="task-list"></div>
 
+    <div id="loading" class="loading hidden">Loading...</div>
   </div>
 
 </div>
 
+<script src="script.js" defer></script>
 </body>
 </html>
