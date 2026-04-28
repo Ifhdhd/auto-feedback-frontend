@@ -1,25 +1,214 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <title>Auto Feedback</title>
+  <meta charset="UTF-8" />
+  <title>Auto Feedback Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #0f172a;
+      color: white;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
+
+    input {
+      padding: 10px;
+      width: 100%;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      border: none;
+    }
+
+    button {
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #22c55e;
+      color: white;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+
+    button:hover {
+      opacity: 0.8;
+    }
+
+    .danger {
+      background: #ef4444;
+    }
+
+    .loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+      z-index: 999;
+    }
+  </style>
 </head>
 <body>
 
-<h2>Login</h2>
-<input id="account" placeholder="Account">
-<input id="password" placeholder="Password" type="password">
-<button onclick="login()">Login</button>
+<div class="loading" id="loading">
+  ⏳ Sedang memuat data...
+</div>
 
-<hr>
+<div class="card">
+  <h2>🔐 Login</h2>
+  <input id="account" placeholder="Nomor HP"/>
+  <input id="password" type="password" placeholder="Password"/>
+  <button onclick="login()">Login</button>
+</div>
 
-<button onclick="loadTasks()">Load Data</button>
+<div class="card">
+  <h2>📊 Data Tasks</h2>
+  <p>Total: <span id="total">0</span></p>
 
-<h3 id="status">Status: -</h3>
-<h3 id="total">Total: -</h3>
+  <button onclick="loadTasks()">🔄 Load Data</button>
+  <button onclick="autoFeedback()" class="danger">🚀 Auto Feedback</button>
 
-<div id="list"></div>
+  <div id="list"></div>
+</div>
 
-<script src="app.js"></script>
+<script>
+let cookies = [];
+let tasks = [];
+
+function showLoading(state) {
+  document.getElementById("loading").style.display = state ? "flex" : "none";
+}
+
+// ================= LOGIN =================
+async function login() {
+  try {
+    showLoading(true);
+
+    const res = await axios.post(
+      "https://auto-feedback-backend.onrender.com/api/login",
+      {
+        account: document.getElementById("account").value,
+        password: document.getElementById("password").value
+      }
+    );
+
+    cookies = res.data.cookies;
+
+    alert("Login berhasil!");
+
+    await loadTasks(); // 🔥 AUTO LOAD setelah login
+
+  } catch (err) {
+    alert("Login gagal");
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ================= LOAD TASK =================
+async function loadTasks() {
+  try {
+    showLoading(true);
+
+    await axios.post(
+      "https://auto-feedback-backend.onrender.com/api/tasks",
+      { cookies }
+    );
+
+    // ambil hasil
+    setTimeout(async () => {
+      const res = await axios.get(
+        "https://auto-feedback-backend.onrender.com/api/tasks/result"
+      );
+
+      tasks = res.data.data || [];
+
+      document.getElementById("total").innerText = res.data.total || 0;
+
+      render();
+
+      showLoading(false);
+    }, 2000);
+
+  } catch (err) {
+    console.log(err);
+    showLoading(false);
+  }
+}
+
+// ================= RENDER =================
+function render() {
+  const el = document.getElementById("list");
+  el.innerHTML = "";
+
+  tasks.forEach((t, i) => {
+    el.innerHTML += `
+      <div class="card">
+        <b>${t.userName}</b><br/>
+        📞 ${t.phoneNumber}<br/>
+        💰 ${t.formatDebt}<br/>
+        📍 ${t.addressBo?.city}<br/>
+        Status: ${t.feedbackStatus}
+      </div>
+    `;
+  });
+}
+
+// ================= AUTO FEEDBACK =================
+async function autoFeedback() {
+  if (tasks.length === 0) {
+    alert("Data kosong!");
+    return;
+  }
+
+  if (!confirm("Yakin mau auto feedback semua?")) return;
+
+  showLoading(true);
+
+  let success = 0;
+  let fail = 0;
+
+  for (let i = 0; i < tasks.length; i++) {
+    try {
+      await axios.post(
+        "https://auto-feedback-backend.onrender.com/api/feedback",
+        {
+          cookies,
+          task: tasks[i]
+        }
+      );
+
+      success++;
+      console.log("✅ sukses:", tasks[i].userName);
+
+    } catch (err) {
+      fail++;
+      console.log("❌ gagal:", tasks[i].userName);
+    }
+  }
+
+  showLoading(false);
+
+  alert(`Selesai!\n✅ ${success} sukses\n❌ ${fail} gagal`);
+
+  // reload data setelah feedback
+  loadTasks();
+}
+</script>
 
 </body>
 </html>
