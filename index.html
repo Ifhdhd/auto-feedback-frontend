@@ -2,66 +2,40 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard Auto Feedback</title>
+  <title>Auto Feedback Dashboard</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
-
-  <h1>⚡ Dashboard Auto Feedback</h1>
+  <h1>🚀 Auto Feedback Dashboard</h1>
 
   <!-- LOGIN -->
   <div class="card">
-    <h2>Login</h2>
-    <input type="text" id="account" placeholder="Nomor HP">
-    <input type="password" id="password" placeholder="Password">
+    <h3>Login</h3>
+    <input id="account" placeholder="Nomor HP">
+    <input id="password" type="password" placeholder="Password">
     <button onclick="login()">Login</button>
   </div>
 
   <!-- ACTION -->
-  <div class="card">
-    <h2>Action</h2>
-    <button onclick="loadTasks()">📥 Load Data</button>
-    <button onclick="runAuto()">🔥 Auto Feedback</button>
-    <button onclick="toggleAutoRefresh()">🔄 Auto Refresh</button>
-  </div>
-
-  <!-- PROGRESS -->
-  <div class="card">
-    <h2>Progress</h2>
-    <div class="progress-bar">
-      <div id="progress"></div>
-    </div>
+  <div class="card hidden" id="actionBox">
+    <button onclick="loadTasks()">🔄 Load Tasks</button>
+    <button onclick="startAuto()">🔥 Auto Feedback</button>
   </div>
 
   <!-- SUMMARY -->
-  <div class="grid">
-    <div class="stat total" id="stat-total">0</div>
-    <div class="stat sudah" id="stat-sudah">0</div>
-    <div class="stat belum" id="stat-belum">0</div>
-    <div class="stat expired" id="stat-expired">0</div>
+  <div class="card hidden" id="summaryBox">
+    <h3>Summary</h3>
+    <div id="summary"></div>
   </div>
 
-  <!-- SEARCH -->
-  <input type="text" id="search" placeholder="🔍 Cari nama..." onkeyup="renderTable()">
-
-  <!-- TABLE -->
-  <div class="card">
-    <table id="table">
-      <thead>
-        <tr>
-          <th>Nama</th>
-          <th>DPD</th>
-          <th>Debt</th>
-          <th>Status</th>
-          <th>Sisa Hari</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <!-- TASK LIST -->
+  <div class="card hidden">
+    <h3>Tasks</h3>
+    <div id="taskList"></div>
+    <div id="loading">Loading...</div>
   </div>
-
 </div>
 
 <script src="script.js"></script>
