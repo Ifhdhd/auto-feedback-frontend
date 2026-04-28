@@ -3,137 +3,130 @@ let page = 1;
 let loading = false;
 let finished = false;
 
-// =======================
-// 🔐 LOGIN
-// =======================
+// =====================
+// LOGIN
+// =====================
 async function login() {
-  console.log("LOGIN DIKLIK");
-
   const account = document.getElementById("account").value;
   const password = document.getElementById("password").value;
 
-  if (!account || !password) {
-    alert("Isi dulu!");
+  const res = await fetch("https://auto-feedback-backend.onrender.com/api/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ account, password })
+  });
+
+  const data = await res.json();
+
+  if (!data.success) {
+    alert("Login gagal");
     return;
   }
 
-  try {
-    const res = await fetch("https://auto-feedback-backend.onrender.com/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ account, password })
-    });
+  // ✅ simpan cookies
+  cookies = data.cookies.map(c => c.split(";")[0]);
 
-    const data = await res.json();
-    console.log(data);
+  // tampil dashboard
+  document.getElementById("loginBox").style.display = "none";
+  document.getElementById("dashboard").style.display = "block";
 
-    if (!data.success) {
-      alert("Login gagal");
-      return;
-    }
-
-    cookies = data.cookies;
-
-    document.getElementById("loginBox").classList.add("hidden");
-    document.getElementById("dashboard").classList.remove("hidden");
-
-    loadTasks(); // 🔥 auto load
-
-  } catch (err) {
-    alert("Error: " + err.message);
-  }
+  // ✅ AUTO LOAD setelah login
+  resetAndLoad();
 }
 
-// =======================
-// 📋 LOAD TASKS (SCROLL)
-// =======================
+// =====================
+// RESET + LOAD
+// =====================
+function resetAndLoad() {
+  page = 1;
+  finished = false;
+  document.getElementById("list").innerHTML = "";
+  loadTasks();
+}
+
+// =====================
+// LOAD TASKS
+// =====================
 async function loadTasks() {
   if (loading || finished) return;
 
   loading = true;
-  document.getElementById("loading").classList.remove("hidden");
+  document.getElementById("loading").style.display = "block";
 
-  try {
-    const res = await fetch("https://auto-feedback-backend.onrender.com/api/tasks", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ cookies })
-    });
-
-    const data = await res.json();
-    console.log("TASK:", data);
-
-    if (!data.success) return;
-
-    renderSummary(data.summary);
-    renderTasks(data.data);
-
-    if (data.data.length === 0) finished = true;
-
-  } catch (err) {
-    console.log(err);
-  }
-
-  loading = false;
-  document.getElementById("loading").classList.add("hidden");
-}
-
-// =======================
-// 📊 SUMMARY
-// =======================
-function renderSummary(s) {
-  document.getElementById("summary").innerHTML = `
-    Total: ${s.total} |
-    ✅ Sudah: ${s.sudahFeedback} |
-    ❌ Belum: ${s.belumFeedback} |
-    ⏰ Expired: ${s.expired}
-  `;
-}
-
-// =======================
-// 📦 RENDER TASK
-// =======================
-function renderTasks(tasks) {
-  const el = document.getElementById("taskList");
-
-  tasks.forEach(t => {
-    const div = document.createElement("div");
-    div.className = "task";
-
-    div.innerHTML = `
-      <b>${t.userName}</b><br>
-      📞 ${t.phoneNumber}<br>
-      💰 ${t.formatDebt}<br>
-      ⏳ Sisa: ${t.sisaHari || "-"} hari
-    `;
-
-    el.appendChild(div);
+  const res = await fetch("https://auto-feedback-backend.onrender.com/api/tasks", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cookies, page })
   });
-}
 
-// =======================
-// 🔥 AUTO FEEDBACK
-// =======================
-async function startAuto() {
-  if (!cookies.length) {
-    alert("Login dulu!");
+  const data = await res.json();
+
+  document.getElementById("loading").style.display = "none";
+  loading = false;
+
+  if (!data.data || data.data.length === 0) {
+    finished = true;
     return;
   }
 
-  alert("Auto berjalan di backend...");
+  render(data.data);
 
-  fetch("https://auto-feedback-backend.onrender.com/api/auto", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ cookies })
+  // summary
+  document.getElementById("summary").innerText =
+    `Total: ${data.summary.total} | Done: ${data.summary.sudahFeedback} | Pending: ${data.summary.belumFeedback}`;
+
+  page++;
+}
+
+// =====================
+// RENDER UI
+// =====================
+function render(tasks) {
+  const list = document.getElementById("list");
+
+  tasks.forEach(t => {
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.innerHTML = `
+      <b>${t.userName}</b><br>
+      Debt: ${t.formatDebt}<br>
+      DPD: ${t.dpd}<br>
+      Sisa Hari: 
+      <span class="${t.sisaHari <= 0 ? 'expired' : 'ok'}">
+        ${t.sisaHari}
+      </span>
+    `;
+
+    list.appendChild(div);
   });
 }
 
-// =======================
-// 🔄 INFINITE SCROLL
-// =======================
-window.addEventListener("scroll", () => {
-  if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100) {
+// =====================
+// AUTO FEEDBACK
+// =====================
+async function startAuto() {
+  await fetch("https://auto-feedback-backend.onrender.com/api/auto", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cookies })
+  });
+
+  alert("Auto berjalan di background");
+}
+
+// =====================
+// REFRESH
+// =====================
+function refresh() {
+  resetAndLoad();
+}
+
+// =====================
+// INFINITE SCROLL
+// =====================
+window.onscroll = () => {
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 50) {
     loadTasks();
   }
-});
+};
