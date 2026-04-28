@@ -3,10 +3,10 @@ const API = "https://auto-feedback-backend.onrender.com/api";
 let cookies = [];
 let allTasks = [];
 let renderIndex = 0;
-const LIMIT = 10; // jumlah tampil per scroll
+const LIMIT = 10;
 
 // =======================
-// 🔐 LOGIN + AUTO LOAD
+// 🔐 LOGIN
 // =======================
 async function login() {
   const account = document.getElementById("account").value;
@@ -14,7 +14,7 @@ async function login() {
 
   const res = await fetch(`${API}/login`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ account, password })
   });
 
@@ -30,20 +30,19 @@ async function login() {
   document.getElementById("loginBox").classList.add("hidden");
   document.getElementById("dashboard").classList.remove("hidden");
 
-  // 🔥 langsung load semua data
   loadAllTasks();
 }
 
 // =======================
-// 📥 LOAD SEMUA DATA SEKALI
+// 📥 LOAD SEMUA TASK
 // =======================
 async function loadAllTasks() {
   document.getElementById("loading").classList.remove("hidden");
 
   const res = await fetch(`${API}/tasks`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ cookies }) // ❗ TANPA page
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ cookies })
   });
 
   const data = await res.json();
@@ -55,31 +54,48 @@ async function loadAllTasks() {
 
   document.getElementById("taskList").innerHTML = "";
 
-  renderNextBatch();
+  renderNext();
 
   document.getElementById("loading").classList.add("hidden");
 }
 
 // =======================
-// 📦 RENDER BERTAHAP (SCROLL)
+// 📦 RENDER PER BATCH
 // =======================
-function renderNextBatch() {
+function renderNext() {
   const container = document.getElementById("taskList");
 
   const next = allTasks.slice(renderIndex, renderIndex + LIMIT);
 
   next.forEach(t => {
+    const badge = getStatusBadge(t);
+
     container.innerHTML += `
       <div class="task">
         <b>${t.userName}</b><br>
         💰 ${t.formatDebt}<br>
         📍 ${t.addressBo?.city || "-"}<br>
-        ⏳ Sisa: ${t.sisaHari ?? "-"} hari
+        ${badge}
       </div>
     `;
   });
 
   renderIndex += LIMIT;
+}
+
+// =======================
+// 🎯 STATUS BADGE
+// =======================
+function getStatusBadge(t) {
+  if (t.sisaHari === null) {
+    return `<span class="badge yellow">Belum Feedback</span>`;
+  }
+
+  if (t.sisaHari <= 0) {
+    return `<span class="badge red">Expired</span>`;
+  }
+
+  return `<span class="badge green">Aktif (${t.sisaHari} hari)</span>`;
 }
 
 // =======================
@@ -90,23 +106,23 @@ function renderSummary(s) {
 
   document.getElementById("summary").innerHTML = `
     Total: ${s.total} |
-    Sudah: ${s.sudahFeedback} |
-    Belum: ${s.belumFeedback} |
-    Expired: ${s.expired}
+    ✅ Sudah: ${s.sudahFeedback} |
+    ⏳ Belum: ${s.belumFeedback} |
+    ❌ Expired: ${s.expired}
   `;
 }
 
 // =======================
-// 🔥 AUTO FEEDBACK
+// 🚀 AUTO FEEDBACK
 // =======================
 async function startAuto() {
   await fetch(`${API}/auto`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ cookies })
   });
 
-  alert("Auto berjalan 🚀");
+  alert("Auto berjalan di background 🚀");
 }
 
 // =======================
@@ -121,6 +137,6 @@ function resetData() {
 // =======================
 window.addEventListener("scroll", () => {
   if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-    renderNextBatch();
+    renderNext();
   }
 });
