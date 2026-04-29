@@ -28,8 +28,16 @@ app.innerHTML=`
 `;
 }
 
+async function wakeServer(){
+try{
+await fetch(API);
+}catch{}
+}
+
 async function login(){
-app.innerHTML="login...";
+app.innerHTML="connecting server...";
+
+await wakeServer();
 
 try{
 const res=await fetch(API+"/api/login",{
@@ -53,7 +61,7 @@ localStorage.setItem("userId",j.userId);
 load();
 
 }catch{
-alert("Failed to fetch (cek CORS / URL)");
+alert("SERVER BELUM HIDUP / URL SALAH");
 loginView();
 }
 }
@@ -80,7 +88,7 @@ render(j.data);
 }
 
 function render(data){
-app.innerHTML = data.map(t=>`
+app.innerHTML=data.map(t=>`
 <div class="card">
 <b>${t.userName}</b><br>
 ${t.phone}<br>
