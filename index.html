@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <title>APP</title>
+
+<style>
+body{background:#0f172a;color:white;font-family:sans-serif}
+.card{background:#1e293b;margin:10px;padding:15px;border-radius:10px}
+img{width:100%;border-radius:10px}
+button{padding:10px;margin-top:10px;width:100%}
+input{width:100%;padding:10px;margin:5px 0}
+</style>
 </head>
 
 <body>
@@ -10,18 +18,21 @@
 <div id="app"></div>
 
 <script>
-const API = "http://localhost:3000";
+const API="https://auto-feedback-backend.onrender.com";
 
 function loginView(){
-app.innerHTML = `
-<input id="acc" placeholder="no hp"><br>
-<input id="pass" type="password"><br>
-<button onclick="login()">login</button>
+app.innerHTML=`
+<input id="acc" placeholder="No HP">
+<input id="pass" type="password">
+<button onclick="login()">Login</button>
 `;
 }
 
 async function login(){
-const res = await fetch(API+"/api/login",{
+app.innerHTML="login...";
+
+try{
+const res=await fetch(API+"/api/login",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify({
@@ -30,17 +41,27 @@ password:pass.value
 })
 });
 
-const j = await res.json();
+const j=await res.json();
 
-if(!j.success) return alert("gagal");
+if(!j.success){
+alert(j.error);
+return loginView();
+}
 
-localStorage.setItem("userId", j.userId);
+localStorage.setItem("userId",j.userId);
 
 load();
+
+}catch{
+alert("Failed to fetch (cek CORS / URL)");
+loginView();
+}
 }
 
 async function load(){
-const res = await fetch(API+"/api/tasks",{
+app.innerHTML="ambil data...";
+
+const res=await fetch(API+"/api/tasks",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify({
@@ -48,9 +69,25 @@ userId:localStorage.getItem("userId")
 })
 });
 
-const j = await res.json();
+const j=await res.json();
 
-app.innerHTML = JSON.stringify(j.data,null,2);
+if(!j.success){
+alert(j.error);
+return;
+}
+
+render(j.data);
+}
+
+function render(data){
+app.innerHTML = data.map(t=>`
+<div class="card">
+<b>${t.userName}</b><br>
+${t.phone}<br>
+Expire: ${t.expire} hari<br><br>
+<img src="${t.photo || ''}">
+</div>
+`).join("");
 }
 
 loginView();
