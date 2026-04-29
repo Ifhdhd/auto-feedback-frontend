@@ -2,15 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Dashboard</title>
-
-<style>
-body{background:#0f172a;color:white;font-family:sans-serif}
-.card{background:#1e293b;margin:10px;padding:15px;border-radius:10px}
-button{padding:10px;margin-top:10px;width:100%}
-input{width:100%;padding:10px;margin:5px 0}
-.top{padding:10px;background:#111}
-</style>
+<title>APP</title>
 </head>
 
 <body>
@@ -18,18 +10,18 @@ input{width:100%;padding:10px;margin:5px 0}
 <div id="app"></div>
 
 <script>
-const API="https://auto-feedback-backend.onrender.com";
+const API = "http://localhost:3000";
 
 function loginView(){
-app.innerHTML=`
-<input id="acc" placeholder="No HP">
-<input id="pass" type="password">
-<button onclick="login()">Login</button>
+app.innerHTML = `
+<input id="acc" placeholder="no hp"><br>
+<input id="pass" type="password"><br>
+<button onclick="login()">login</button>
 `;
 }
 
 async function login(){
-const res=await fetch(API+"/api/login",{
+const res = await fetch(API+"/api/login",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify({
@@ -38,18 +30,17 @@ password:pass.value
 })
 });
 
-const j=await res.json();
-if(!j.success) return alert("login gagal");
+const j = await res.json();
 
-localStorage.setItem("userId",j.userId);
+if(!j.success) return alert("gagal");
+
+localStorage.setItem("userId", j.userId);
 
 load();
 }
 
 async function load(){
-app.innerHTML="loading...";
-
-const res=await fetch(API+"/api/tasks",{
+const res = await fetch(API+"/api/tasks",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify({
@@ -57,43 +48,9 @@ userId:localStorage.getItem("userId")
 })
 });
 
-const j=await res.json();
-render(j.data);
-}
+const j = await res.json();
 
-async function autoAll(){
-if(!confirm("jalanin semua?")) return;
-
-alert("jalan...");
-
-const res=await fetch(API+"/api/auto",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-userId:localStorage.getItem("userId")
-})
-});
-
-const j=await res.json();
-
-alert("done: "+j.successCount+" sukses, "+j.failCount+" gagal");
-
-load();
-}
-
-function render(data){
-app.innerHTML=`
-<div class="top">
-TOTAL: ${data.length}
-<button onclick="autoAll()">AUTO FEEDBACK ALL</button>
-</div>
-` + data.map(t=>`
-<div class="card">
-<b>${t.userName}</b><br>
-${t.phoneNumber}<br>
-Expire: ${t.expire} hari<br>
-</div>
-`).join("");
+app.innerHTML = JSON.stringify(j.data,null,2);
 }
 
 loginView();
