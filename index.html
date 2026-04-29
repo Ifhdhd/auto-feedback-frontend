@@ -1,104 +1,153 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-<meta charset="UTF-8">
-<title>APP</title>
+  <meta charset="UTF-8">
+  <title>Auto Feedback Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
-body{background:#0f172a;color:white;font-family:sans-serif}
-.card{background:#1e293b;margin:10px;padding:15px;border-radius:10px}
-img{width:100%;border-radius:10px}
-button{padding:10px;margin-top:10px;width:100%}
-input{width:100%;padding:10px;margin:5px 0}
-</style>
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f172a;
+      color: #fff;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 10px;
+    }
+
+    input, button {
+      padding: 10px;
+      margin-top: 10px;
+      width: 100%;
+      border-radius: 8px;
+      border: none;
+    }
+
+    input {
+      background: #334155;
+      color: white;
+    }
+
+    button {
+      background: #22c55e;
+      color: black;
+      font-weight: bold;
+    }
+
+    .notif {
+      background: #ef4444;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+    }
+
+    .task {
+      background: #334155;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+    }
+  </style>
 </head>
-
 <body>
 
-<div id="app"></div>
+<h1>🚀 Auto Feedback</h1>
+
+<div class="card">
+  <h3>Login</h3>
+  <input id="account" placeholder="No HP">
+  <input id="password" placeholder="Password" type="password">
+  <button onclick="login()">Login</button>
+</div>
+
+<div class="card">
+  <h3>Tasks</h3>
+  <button onclick="getTasks()">Load Tasks</button>
+  <div id="tasks"></div>
+</div>
+
+<div class="card">
+  <h3>Notif</h3>
+  <button onclick="getNotif()">Load Notif</button>
+  <div id="notif"></div>
+</div>
 
 <script>
-const API="https://auto-feedback-backend.onrender.com";
 
-function loginView(){
-app.innerHTML=`
-<input id="acc" placeholder="No HP">
-<input id="pass" type="password">
-<button onclick="login()">Login</button>
-`;
+let currentUser = "";
+
+// 🔐 LOGIN
+async function login() {
+  const account = document.getElementById("account").value;
+  const password = document.getElementById("password").value;
+
+  const res = await fetch("https://auto-feedback-backend.onrender.com/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ account, password })
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    alert("Login berhasil");
+    currentUser = account;
+  } else {
+    alert("Login gagal");
+  }
 }
 
-async function wakeServer(){
-try{
-await fetch(API);
-}catch{}
+// 📦 LOAD TASK
+async function getTasks() {
+  if (!currentUser) return alert("Login dulu!");
+
+  const res = await fetch(`https://auto-feedback-backend.onrender.com/tasks/${currentUser}`);
+  const data = await res.json();
+
+  const el = document.getElementById("tasks");
+  el.innerHTML = "";
+
+  data.data.forEach(t => {
+    el.innerHTML += `
+      <div class="task">
+        <b>${t.userName}</b><br>
+        Debt: ${t.formatDebt}<br>
+        DPD: ${t.dpd}
+      </div>
+    `;
+  });
 }
 
-async function login(){
-app.innerHTML="connecting server...";
+// 🔔 LOAD NOTIF
+async function getNotif() {
+  if (!currentUser) return alert("Login dulu!");
 
-await wakeServer();
+  const res = await fetch(`https://auto-feedback-backend.onrender.com/notif/${currentUser}`);
+  const data = await res.json();
 
-try{
-const res=await fetch(API+"/api/login",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-account:acc.value,
-password:pass.value
-})
-});
+  const el = document.getElementById("notif");
+  el.innerHTML = "";
 
-const j=await res.json();
-
-if(!j.success){
-alert(j.error);
-return loginView();
+  data.data.forEach(n => {
+    el.innerHTML += `
+      <div class="notif">
+        ${n.message}
+      </div>
+    `;
+  });
 }
 
-localStorage.setItem("userId",j.userId);
-
-load();
-
-}catch{
-alert("SERVER BELUM HIDUP / URL SALAH");
-loginView();
-}
-}
-
-async function load(){
-app.innerHTML="ambil data...";
-
-const res=await fetch(API+"/api/tasks",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-userId:localStorage.getItem("userId")
-})
-});
-
-const j=await res.json();
-
-if(!j.success){
-alert(j.error);
-return;
-}
-
-render(j.data);
-}
-
-function render(data){
-app.innerHTML=data.map(t=>`
-<div class="card">
-<b>${t.userName}</b><br>
-${t.phone}<br>
-Expire: ${t.expire} hari<br><br>
-<img src="${t.photo || ''}">
-</div>
-`).join("");
-}
-
-loginView();
 </script>
 
 </body>
